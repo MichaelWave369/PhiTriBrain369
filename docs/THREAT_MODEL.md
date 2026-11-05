@@ -49,6 +49,15 @@ This prototype is a local proof of concept, **not** a production knowledge-secur
 - Very large scopes fail closed at 250 recorded claims. No cross-project traversal or permission changes occur.
 - Imported prompt text remains data. There are no model, network, automation, or execution interfaces in this rung.
 
+## Local relation review ledger
+
+- Review status is a local annotation about a proposed relationship, **not** independent verification of either claim or execution authority.
+- Reviewer names are arbitrary strings. Interactive typed confirmation prevents accidental CLI automation but **does not authenticate a person** or restrict code with database access.
+- Every review rechecks original claim quotes and source digests and writes a versioned review plus audit event transactionally.
+- Later reviews require the exact previous review ID; lost updates fail closed. No source or original relation history is deleted.
+- Rejected contradiction proposals are not presented as active contradiction warnings, but remain visible in review history.
+- This is not a secure multi-user review service. Implement authenticated identities, roles, and authorization before exposing it to agents or a network.
+
 ## Before production integrations
 
 Add authenticated identities and per-agent capabilities, validate files and symlinks for export/import, rate limit requests, encrypt protected storage, establish immutable external audit anchors and tested backups, introduce authenticated review and execution gateways, and build prompt-injection/red-team tests on every adapter.
