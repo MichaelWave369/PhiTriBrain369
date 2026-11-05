@@ -41,6 +41,14 @@ This prototype is a local proof of concept, **not** a production knowledge-secur
 - Hash and offset checks detect some accidental data corruption but do not prevent coordinated database rewriting by a privileged local actor.
 - Results include source text/quotes and paths, which may reveal confidential data if exposed through logs, exported JSON or future agent APIs. Do not connect this to an untrusted network service.
 
+## WEAVER proposal safety
+
+- WEAVER lexical similarities and apparent negation conflicts are **unverified proposals**, not probability scores, factual consensus, semantic equivalence or executable instructions.
+- Only quote-backed, scope-matched, non-superseded claims can participate. Every source digest and quote anchor is verified before relationship suggestions are created.
+- Apply operations append proposed relations and audit events as a single SQLite transaction. Existing manual relations are respected.
+- Very large scopes fail closed at 250 recorded claims. No cross-project traversal or permission changes occur.
+- Imported prompt text remains data. There are no model, network, automation, or execution interfaces in this rung.
+
 ## Before production integrations
 
 Add authenticated identities and per-agent capabilities, validate files and symlinks for export/import, rate limit requests, encrypt protected storage, establish immutable external audit anchors and tested backups, introduce authenticated review and execution gateways, and build prompt-injection/red-team tests on every adapter.
