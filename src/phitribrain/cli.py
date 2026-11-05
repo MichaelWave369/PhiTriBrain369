@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from .store import BrainStore
+from .evidence import annotate_claim_time, cited_claim, find_evidence
 from .vault_import import apply_vault, preview_vault, rollback_vault, scan_vault
 from .github_ingest import (
     apply as apply_github, parse_manifest, prepare as prepare_github,
@@ -72,6 +73,24 @@ def parser() -> argparse.ArgumentParser:
     vault.add_argument("--apply", action="store_true", help="Ingest selected notes into local SQLite")
     vault.add_argument("--accept-updates", action="store_true", help="Allow newer note contents to replace active path mappings")
     vault.add_argument("--rollback", metavar="BATCH_ID", help="Undo a prior import's active mappings")
+    evidence = sub.add_parser("evidence", help="Find quote-backed claims with source citations")
+    evidence.add_argument("--scope", required=True)
+    evidence.add_argument("--query", required=True)
+    evidence.add_argument("--limit", type=int, default=10)
+    evidence.add_argument("--as-of", help="ISO 8601 datetime with timezone")
+    evidence.add_argument("--stale-after-days", type=int, default=180)
+    cite = sub.add_parser("cite", help="Show an exact quote citation for a claim")
+    cite.add_argument("--scope", required=True)
+    cite.add_argument("--claim", required=True)
+    cite.add_argument("--as-of", help="ISO 8601 datetime with timezone")
+    cite.add_argument("--stale-after-days", type=int, default=180)
+    claim_time = sub.add_parser("claim-time", help="Append a claimed validity interval, never verify it")
+    claim_time.add_argument("--scope", required=True)
+    claim_time.add_argument("--claim", required=True)
+    claim_time.add_argument("--from", dest="valid_from", help="Asserted earliest validity date (YYYY-MM-DD)")
+    claim_time.add_argument("--until", dest="valid_until", help="Asserted latest validity date (YYYY-MM-DD)")
+    claim_time.add_argument("--basis", required=True, help="Explain why this interval is asserted")
+    claim_time.add_argument("--actor", default="local", help="Unauthenticated actor label")
     return p
 
 
@@ -149,6 +168,22 @@ def main(argv: list[str] | None = None) -> int:
                 )
             elif args.command == "search":
                 result = store.search(scope=args.scope, query=args.query, limit=args.limit)
+            elif args.command == "evidence":
+                result = find_evidence(
+                    store, scope=args.scope, query=args.query, limit=args.limit,
+                    as_of=args.as_of, stale_after_days=args.stale_after_days,
+                )
+            elif args.command == "cite":
+                result = cited_claim(
+                    store, scope=args.scope, claim_id=args.claim,
+                    as_of=args.as_of, stale_after_days=args.stale_after_days,
+                )
+            elif args.command == "claim-time":
+                result = annotate_claim_time(
+                    store, scope=args.scope, claim_id=args.claim,
+                    valid_from=args.valid_from, valid_until=args.valid_until,
+                    basis=args.basis, actor=args.actor,
+                )
             elif args.command == "show":
                 result = store.inspect(scope=args.scope, record_id=args.id)
             elif args.command == "stats":
