@@ -1,10 +1,14 @@
+import io
+import json
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
 from phitribrain.evidence import annotate_claim_time, cited_claim, find_evidence
+from phitribrain.cli import main
 from phitribrain.store import BrainStore, sha
 
 
@@ -227,6 +231,37 @@ class EvidenceRetrievalTests(unittest.TestCase):
         self.assertTrue(any(
             "historical vault snapshot" in w for w in result["warnings"]
         ))
+
+    def test_cli_evidence_cite_and_temporal_annotation(self):
+        def run(*args):
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = main([
+                    "--db", str(self.store.path), *args,
+                ])
+            self.assertEqual(status, 0)
+            return json.loads(output.getvalue())
+
+        found = run("evidence", "--scope", "PhiOS", "--query", "ledger")
+        self.assertEqual(found["count"], 1)
+        cited = run("cite", "--scope", "PhiOS", "--claim", self.claim["id"])
+        self.assertEqual(cited["quote"], "The ledger is local.")
+        annotated = run(
+            "claim-time", "--scope", "PhiOS", "--claim", self.claim["id"],
+            "--from", "2026-01-01", "--until", "2026-12-31",
+            "--basis", "Human review",
+        )
+        self.assertEqual(annotated["status"], "asserted_not_verified")
+        newer = run(
+            "cite", "--scope", "PhiOS", "--claim", self.claim["id"],
+            "--as-of", "2026-06-01T00:00:00Z",
+        )
+        self.assertEqual(newer["valid_time"]["status"], "within_asserted_interval")
+
+    def test_invalid_age_threshold_even_on_no_matches(self):
+        with self.assertRaisesRegex(ValueError, "stale_after_days"):
+            find_evidence(self.store, scope="PhiOS", query="nonexistent",
+                          stale_after_days=0)
 
     def test_evaluation_fixture_precision(self):
         other_source = self.store.ingest(
