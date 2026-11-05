@@ -189,6 +189,19 @@ CREATE TABLE IF NOT EXISTS relation_reviews (
 );
 CREATE INDEX IF NOT EXISTS idx_relation_reviews_scope_relation
  ON relation_reviews(scope,relation_id,seq);
+CREATE TABLE IF NOT EXISTS reviewer_accounts (
+ scope TEXT NOT NULL,
+ username TEXT NOT NULL,
+ role TEXT NOT NULL CHECK(role IN ('owner','reviewer','observer')),
+ enabled INTEGER NOT NULL DEFAULT 1 CHECK(enabled IN (0,1)),
+ salt BLOB NOT NULL,
+ password_hash BLOB NOT NULL,
+ iterations INTEGER NOT NULL,
+ created_at TEXT NOT NULL,
+ updated_at TEXT NOT NULL,
+ PRIMARY KEY(scope,username)
+);
+CREATE INDEX IF NOT EXISTS idx_reviewer_accounts_scope ON reviewer_accounts(scope);
 CREATE TABLE IF NOT EXISTS claim_embeddings (
  scope TEXT NOT NULL,
  claim_id TEXT NOT NULL REFERENCES claims(id),

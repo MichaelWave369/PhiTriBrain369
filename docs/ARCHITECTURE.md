@@ -21,8 +21,9 @@
 - time annotation: append-only, explicitly asserted valid-time interval; original recorded time preserved
 - local embedding: disposable scope/model/claim derived vector, content hash, dimension and index time
 - semantic proposal: relationship ID, local model name, cosine similarity (not confidence), and context-review notes
+- reviewer account: scope-local user label, role, enabled flag, salted password verifier and timestamps; no plaintext password persisted
 
-Tables include sources, source_origins, claims, relations, weaver_proposals, relation_reviews, decisions, decision_evidence, audit_events, github_imports, vault_batches, vault_notes, vault_revisions, claim_time_annotations, claim_embeddings, semantic_weaver_proposals, and SQLite FTS5 search_fts.
+Tables include sources, source_origins, claims, relations, weaver_proposals, relation_reviews, decisions, decision_evidence, audit_events, github_imports, vault_batches, vault_notes, vault_revisions, claim_time_annotations, claim_embeddings, semantic_weaver_proposals, reviewer_accounts, and SQLite FTS5 search_fts.
 
 ## 9 invariants
 
@@ -58,7 +59,7 @@ flowchart TD
 
 ## Persistence and query boundaries
 
-One SQLite database is used by three logical roles, not three separate LLMs. Rung 2a adds explicit, public, commit-pinned GitHub HTTPS reads in WITNESS; no automatic crawler or remote write capability. SQLite WAL is enabled for local concurrency. FTS5 performs scoped lexical retrieval. Rung 2c additionally restricts citation search to claims with exact quote anchors, warns about old observations, and abstains on missing quote-backed evidence. Rung 3c adds bounded, locally cached embeddings from an optional explicitly invoked loopback Ollama service and RRF hybrid retrieval. No external embedding provider, generative reasoning agent, multi-user authentication or network listener is provided.
+One SQLite database is used by three logical roles, not three separate LLMs. Rung 2a adds explicit, public, commit-pinned GitHub HTTPS reads in WITNESS; no automatic crawler or remote write capability. SQLite WAL is enabled for local concurrency. FTS5 performs scoped lexical retrieval. Rung 2c additionally restricts citation search to claims with exact quote anchors, warns about old observations, and abstains on missing quote-backed evidence. Rung 3c adds bounded, locally cached embeddings from an optional explicitly invoked loopback Ollama service and RRF hybrid retrieval. No external embedding provider, generative reasoning agent, or network listener is provided. Rung 3e adds a voluntary scope-local password check for WEAVER relation review only; it is **not** a network identity system or general database authorization.
 
 Project scopes are organizational labels and cannot be trusted as authorization boundaries. Model text injected into a source must never be passed into an agent's instruction channel.
 

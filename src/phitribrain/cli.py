@@ -2,12 +2,16 @@
 from __future__ import annotations
 
 import argparse
+import getpass
 import json
 import os
 import sys
 from pathlib import Path
 
 from .store import BrainStore
+from .review_auth import (
+    change_reviewer_status, enroll_reviewer, list_reviewers, review_gate_enabled,
+)
 from .semantic_weaver import semantic_candidates, apply_semantic_candidates
 from .hybrid import build_index, evaluate_hybrid, hybrid_search, index_plan
 from .relation_review import annotate_relation, relation_detail, relation_queue
@@ -139,6 +143,18 @@ def parser() -> argparse.ArgumentParser:
     semantic.add_argument("--min-cosine", type=float, default=0.82, help="Similarity threshold (0.5-1.0)")
     semantic.add_argument("--limit", type=int, default=20, help="Maximum candidate links (1-30)")
     semantic.add_argument("--apply", action="store_true", help="Save review-only RELATED suggestions")
+    accounts = sub.add_parser("reviewer-list", help="Show local scope reviewer roles (no password material)")
+    accounts.add_argument("--scope", required=True)
+    enroll = sub.add_parser("reviewer-enroll", help="Interactive scope-owner bootstrap or owner-authorized enrollment")
+    enroll.add_argument("--scope", required=True)
+    enroll.add_argument("--user", required=True)
+    enroll.add_argument("--role", choices=("owner", "reviewer", "observer"), required=True)
+    enroll.add_argument("--owner", help="Existing scope owner username, required after bootstrap")
+    status = sub.add_parser("reviewer-status", help="Enable/disable a scope reviewer with local owner authorization")
+    status.add_argument("--scope", required=True)
+    status.add_argument("--user", required=True)
+    status.add_argument("--owner", required=True)
+    status.add_argument("--enabled", required=True, choices=("yes", "no"))
     return p
 
 
@@ -165,7 +181,8 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command in (
             "weave", "relation-queue", "relation-detail", "relation-review",
-            "embed-index", "hybrid", "hybrid-eval", "weave-semantic"
+            "embed-index", "hybrid", "hybrid-eval", "weave-semantic",
+            "reviewer-list", "reviewer-enroll", "reviewer-status"
         ) and not Path(args.db).expanduser().is_file():
             raise ValueError("Knowledge retrieval requires an existing initialized database")
         if args.command == "relation-review":
@@ -177,9 +194,14 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Type exactly: {confirmation}", file=sys.stderr)
             if input("Confirmation: ").strip() != confirmation:
                 raise ValueError("Review confirmation did not match")
+        if args.command in ("reviewer-enroll", "reviewer-status") and not sys.stdin.isatty():
+            raise ValueError("Local reviewer administration requires an interactive terminal")
         with BrainStore(
             args.db,
-            readonly=(args.command in ("embed-index", "weave-semantic") and not args.apply),
+            readonly=(
+                (args.command in ("embed-index", "weave-semantic") and not args.apply)
+                or args.command == "reviewer-list"
+            ),
         ) as store:
             if args.command == "init":
                 result = {"database": str(Path(args.db).resolve()), "created": True}
@@ -255,6 +277,29 @@ def main(argv: list[str] | None = None) -> int:
                         store, scope=args.scope, model=args.model,
                         min_cosine=args.min_cosine, limit=args.limit,
                     )
+            elif args.command == "reviewer-list":
+                result = list_reviewers(store, scope=args.scope)
+            elif args.command == "reviewer-enroll":
+                new_password = getpass.getpass("New local reviewer password: ")
+                confirm = getpass.getpass("Confirm new password: ")
+                if new_password != confirm:
+                    raise ValueError("New reviewer password confirmation did not match")
+                owner_password = (
+                    getpass.getpass("Existing scope owner password: ")
+                    if args.owner is not None else None
+                )
+                result = enroll_reviewer(
+                    store, scope=args.scope, username=args.user,
+                    role=args.role, password=new_password,
+                    owner_username=args.owner, owner_password=owner_password,
+                )
+            elif args.command == "reviewer-status":
+                owner_password = getpass.getpass("Scope owner password: ")
+                result = change_reviewer_status(
+                    store, scope=args.scope, username=args.user,
+                    enabled=args.enabled == "yes",
+                    owner_username=args.owner, owner_password=owner_password,
+                )
             elif args.command == "relation-queue":
                 result = relation_queue(store, scope=args.scope,
                                         status=args.status, limit=args.limit,
@@ -263,10 +308,15 @@ def main(argv: list[str] | None = None) -> int:
                 result = relation_detail(store, scope=args.scope,
                                          relation_id=args.relation)
             elif args.command == "relation-review":
+                password = (
+                    getpass.getpass("Enrolled local reviewer password: ")
+                    if review_gate_enabled(store, scope=args.scope) else None
+                )
                 result = annotate_relation(
                     store, scope=args.scope, relation_id=args.relation,
                     outcome=args.outcome, reviewer=args.reviewer,
                     reason=args.reason, supersedes=args.supersedes,
+                    auth_password=password,
                 )
             elif args.command == "evidence":
                 result = find_evidence(
