@@ -8,6 +8,10 @@ import sys
 from pathlib import Path
 
 from .store import BrainStore
+from .github_ingest import (
+    apply as apply_github, parse_manifest, prepare as prepare_github,
+    preview as preview_github,
+)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -57,15 +61,24 @@ def parser() -> argparse.ArgumentParser:
     export = sub.add_parser("export", help="Export a scope to an empty Markdown folder")
     export.add_argument("--scope", required=True)
     export.add_argument("--directory", required=True)
+    github = sub.add_parser("github", help="WITNESS: preview commit-pinned public GitHub imports")
+    github.add_argument("--manifest", required=True, help="Explicit JSON allowlist (repository, commit, paths)")
+    github.add_argument("--apply", action="store_true", help="Write verified sources to local SQLite")
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "github" and not args.apply:
+            result = preview_github(prepare_github(parse_manifest(args.manifest)))
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
         with BrainStore(args.db) as store:
             if args.command == "init":
                 result = {"database": str(Path(args.db).resolve()), "created": True}
+            elif args.command == "github":
+                result = apply_github(store, prepare_github(parse_manifest(args.manifest)))
             elif args.command == "ingest":
                 file_path = Path(args.file)
                 if file_path.stat().st_size > 5_000_000:
