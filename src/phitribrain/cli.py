@@ -170,7 +170,10 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Type exactly: {confirmation}", file=sys.stderr)
             if input("Confirmation: ").strip() != confirmation:
                 raise ValueError("Review confirmation did not match")
-        with BrainStore(args.db) as store:
+        with BrainStore(
+            args.db,
+            readonly=(args.command == "embed-index" and not args.apply),
+        ) as store:
             if args.command == "init":
                 result = {"database": str(Path(args.db).resolve()), "created": True}
             elif args.command == "github":
