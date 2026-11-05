@@ -147,7 +147,7 @@ class VaultImporterTests(unittest.TestCase):
         folder.mkdir()
         (folder / "Another.md").write_text("Nested", encoding="utf-8")
         paths = [p["relative_path"] for p in self.plans()]
-        self.assertEqual(paths, ["Project.md", "Nested/Another.md"] if False else sorted(paths))
+        self.assertCountEqual(paths, ["Project.md", "Nested/Another.md"])
         self.assertIn("Nested/Another.md", paths)
 
     def test_refuse_symlinked_note(self):
