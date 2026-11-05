@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 
 from .evidence import cited_claim
+from .review_auth import authorize_review
 from .store import BrainStore, new_id, utcnow, validate_scope
 
 OUTCOMES = ("accepted", "rejected", "needs_context")
@@ -126,7 +127,8 @@ def relation_queue(store: BrainStore, *, scope: str, status: str = "pending",
 
 def annotate_relation(store: BrainStore, *, scope: str, relation_id: str,
                       outcome: str, reviewer: str, reason: str,
-                      supersedes: str | None = None) -> dict:
+                      supersedes: str | None = None,
+                      auth_password: str | None = None) -> dict:
     """Append one review atomically, using the latest review ID as an optimistic lock.
 
     A first review must have supersedes=None. Every later review must provide
@@ -145,6 +147,9 @@ def annotate_relation(store: BrainStore, *, scope: str, relation_id: str,
         raise ValueError("--supersedes must be an existing review ID")
     with store.db:
         store.db.execute("BEGIN IMMEDIATE")
+        verified = authorize_review(
+            store, scope=scope, username=reviewer, password=auth_password
+        )
         relation = _relation(store, scope, relation_id)
         # Revalidate source quotes and hashes before recording any adjudication.
         for claim in (relation["left_claim"], relation["right_claim"]):
@@ -173,11 +178,14 @@ def annotate_relation(store: BrainStore, *, scope: str, relation_id: str,
             "review_id": review_id, "relation_id": relation_id,
             "outcome": outcome, "reviewer": reviewer.strip(),
             "reason": reason.strip(), "previous_review_id": expected,
+            "reviewer_role": verified["role"],
+            "credential_checked": verified["credential_checked"],
         })
     return {
         "scope": scope, "relation_id": relation_id,
         "review_id": review_id, "previous_review_id": expected,
         "review_status": outcome, "created_at": created_at,
         "truth_status": "unverified_relation_review",
+        "credential_checked": verified["credential_checked"],
         "notice": "The original relation remains proposed. No execution authorization.",
     }
