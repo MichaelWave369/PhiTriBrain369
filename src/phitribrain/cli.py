@@ -9,6 +9,9 @@ import sys
 from pathlib import Path
 
 from .store import BrainStore
+from .operator_bridge import (
+    create_bridge_snapshot, export_bridge_snapshot, parse_bridge_manifest,
+)
 from .review_auth import (
     change_reviewer_status, enroll_reviewer, list_reviewers, review_gate_enabled,
 )
@@ -155,6 +158,9 @@ def parser() -> argparse.ArgumentParser:
     status.add_argument("--user", required=True)
     status.add_argument("--owner", required=True)
     status.add_argument("--enabled", required=True, choices=("yes", "no"))
+    bridge = sub.add_parser("bridge", help="Preview or create an explicit, read-only Phi369 operator snapshot")
+    bridge.add_argument("--manifest", required=True, help="Explicit local JSON IDs/consumer allowlist")
+    bridge.add_argument("--output", help="Create a NEW local JSON file; never overwrite or transmit")
     return p
 
 
@@ -175,6 +181,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "vault" and args.rollback:
             if args.apply or args.accept_updates or args.directory:
                 raise ValueError("--rollback cannot be combined with --apply, --accept-updates or --directory")
+        if args.command == "bridge":
+            bridge_manifest = parse_bridge_manifest(args.manifest)
         if args.command == "github" and not args.apply:
             result = preview_github(prepare_github(parse_manifest(args.manifest)))
             print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -182,7 +190,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command in (
             "weave", "relation-queue", "relation-detail", "relation-review",
             "embed-index", "hybrid", "hybrid-eval", "weave-semantic",
-            "reviewer-list", "reviewer-enroll", "reviewer-status"
+            "reviewer-list", "reviewer-enroll", "reviewer-status", "bridge"
         ) and not Path(args.db).expanduser().is_file():
             raise ValueError("Knowledge retrieval requires an existing initialized database")
         if args.command == "relation-review":
@@ -200,7 +208,7 @@ def main(argv: list[str] | None = None) -> int:
             args.db,
             readonly=(
                 (args.command in ("embed-index", "weave-semantic") and not args.apply)
-                or args.command == "reviewer-list"
+                or args.command in ("reviewer-list", "bridge")
             ),
         ) as store:
             if args.command == "init":
@@ -282,6 +290,14 @@ def main(argv: list[str] | None = None) -> int:
                         store, scope=args.scope, model=args.model,
                         min_cosine=args.min_cosine, limit=args.limit,
                     )
+            elif args.command == "bridge":
+                snapshot = create_bridge_snapshot(
+                    store, manifest=bridge_manifest
+                )
+                result = (
+                    export_bridge_snapshot(snapshot, output=args.output)
+                    if args.output else snapshot
+                )
             elif args.command == "reviewer-list":
                 result = list_reviewers(store, scope=args.scope)
             elif args.command == "reviewer-enroll":

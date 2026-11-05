@@ -37,6 +37,9 @@
 
 ## Rung 4: Phi369 operator bridges
 
+- [x] Rung 4a: explicit-ID, single-scope, offline read-only three-lane JSON snapshot for PhiMadaPrime/PhiBots/PhiOS/PhiRSI, no network or execution
+- [ ] Authenticated read-only local operator service and PhiMadaPrime visualization (future rung)
+
 - [ ] MCP service with least-privilege scoped capabilities
 - [ ] PhiMadaPrime WITNESS/WEAVER/STEWARD workspace
 - [ ] PhiBots task handoff with idempotency and collision prevention
