@@ -4,7 +4,7 @@
 
 A local-first, model-independent knowledge store for the Phi369 ecosystem, designed to give PhiOS, PhiMadaPrime, PhiBots, and PhiRSI traceable project memory without locking the architecture to any single LLM provider.
 
-**Status: Rung 1 runnable prototype.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
+**Status: Rung 1 implemented; Rung 2 public GitHub WITNESS adapter available.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
 
 ## Three brains
 
@@ -53,6 +53,17 @@ phitribrain link --scope PhiOS --left CLAIM_ID_1 --right CLAIM_ID_2 --type suppo
 
 The relation is created as **proposed**. No background fact-checker or autonomous execution occurs.
 
+## Rung 2: read-only GitHub WITNESS import
+
+Choose an explicit, commit-pinned allowlist of public GitHub files, preview without touching SQLite, and apply only after inspection:
+
+```bash
+phitribrain github --manifest examples/github-allowlist.sample.json
+phitribrain github --manifest examples/github-allowlist.sample.json --apply
+```
+
+Sources now preserve Git blob SHA, full commit SHA, file path, and retrieval time as structured provenance. No background crawling, private repository access, GitHub writes, agent instructions, or automatic claim extraction occurs. See [GitHub ingestion guide](docs/GITHUB_IMPORT.md).
+
 ## Manual review
 
 `phitribrain review` requires an interactive terminal and an exact typed confirmation. It records only a **local review annotation**. Reviewer labels are not authenticated, and no agent gains permission to run actions as a consequence.
@@ -75,7 +86,7 @@ The relation is created as **proposed**. No background fact-checker or autonomou
 - **Not a security boundary.** Scopes organize content; they are not authorization, isolation between users, or validated agent identities.
 - **Not tamper-proof.** An owner with database write access can rewrite or truncate both records and audit history; externally anchored snapshots are future work.
 - **Not an automatic truth engine.** Exact quoted text proves what a source says, not that the statement is accurate.
-- **Not connected to GitHub, Obsidian, or PhiOS yet.** All ingestion is manually supplied and read-only from local text files.
+- **GitHub ingestion is limited.** Rung 2 supports public, immutable-commit, explicitly allowlisted UTF-8 files. Private GitHub data, CI event ingestion, Obsidian import, and PhiOS integration remain future work.
 - **Not semantic search.** Search uses lexical FTS5; optional local embeddings are proposed for a later rung.
 - **Not two-way sync.** Editing exported Markdown does not update SQLite.
 - **Prompt-injection risk.** Imported text must always be treated as untrusted data, never agent instructions.
