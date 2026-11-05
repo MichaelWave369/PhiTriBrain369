@@ -25,11 +25,12 @@
 - [ ] Authenticated review identities and actual reviewer permissions (not provided by the Rung 3b local CLI)
 - [ ] Semantic contradiction reasoning, duplicate consolidation and contextual/temporal resolution (beyond Rung 3a heuristics)
 
-- [ ] Optional local embeddings plus hybrid search (FTS5 + vectors)
+- [x] Rung 3c: optional loopback Ollama embedding index, scoped FTS5 + cosine RRF retrieval and quote-backed matches (small local caches only)
 - [ ] Human-reviewed contradiction resolution and consolidation of equivalent claims (Rung 3a only proposes candidates)
 - [ ] Confidence calibration; abstention when evidence is insufficient
 - [ ] Authenticated human review queue and provenance-aware edits
-- [ ] Retrieval evaluation: recall@k, MRR, citation precision, cross-scope leaks
+- [x] Rung 3c: reproducible judged-corpus recall@k, precision@k, MRR and scope-leak checks (initial offline-fixture evaluation)
+- [ ] Larger representative benchmark with citation precision judgments, quality thresholds and latency profiling
 
 ## Rung 4: Phi369 operator bridges
 

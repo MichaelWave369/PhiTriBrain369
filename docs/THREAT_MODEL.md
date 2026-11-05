@@ -58,6 +58,16 @@ This prototype is a local proof of concept, **not** a production knowledge-secur
 - Rejected contradiction proposals are not presented as active contradiction warnings, but remain visible in review history.
 - This is not a secure multi-user review service. Implement authenticated identities, roles, and authorization before exposing it to agents or a network.
 
+## Optional local embedding service
+
+- Only explicit `embed-index --apply`, `hybrid`, or `hybrid-eval` sends text to `127.0.0.1:11434`; preview never sends text. Redirects and HTTP proxy forwarding are blocked.
+- A loopback network address is not a cryptographic guarantee that the Ollama daemon uses only local weights. Users must choose a downloaded local embedding model and secure the service against cloud routing or exposure.
+- The embedding input contains stored statements and quoted source text. It may contain secrets or sensitive material. Index **only non-sensitive, reviewed claims** and protect the local daemon.
+- Derived vector rows are plaintext and keyed by scope, model and claim content digest; cache invalidation is not secure deletion.
+- Embedding-based similarity and fused rankings have no calibrated relationship to truth, evidence quality, authority or recency. Exact citations are verified before displaying results.
+- Judged retrieval scores apply only to the supplied evaluation corpus; no accuracy promise follows from mocked tests.
+- The prototype scans a small scope-local vector cache in Python, not a production vector database. No multi-user ACLs or authenticated agent permissions.
+
 ## Before production integrations
 
 Add authenticated identities and per-agent capabilities, validate files and symlinks for export/import, rate limit requests, encrypt protected storage, establish immutable external audit anchors and tested backups, introduce authenticated review and execution gateways, and build prompt-injection/red-team tests on every adapter.

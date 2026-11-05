@@ -189,21 +189,45 @@ CREATE TABLE IF NOT EXISTS relation_reviews (
 );
 CREATE INDEX IF NOT EXISTS idx_relation_reviews_scope_relation
  ON relation_reviews(scope,relation_id,seq);
+CREATE TABLE IF NOT EXISTS claim_embeddings (
+ scope TEXT NOT NULL,
+ claim_id TEXT NOT NULL REFERENCES claims(id),
+ model TEXT NOT NULL,
+ content_sha256 TEXT NOT NULL,
+ dimension INTEGER NOT NULL,
+ vector_json TEXT NOT NULL,
+ indexed_at TEXT NOT NULL,
+ PRIMARY KEY(scope,claim_id,model)
+);
+CREATE INDEX IF NOT EXISTS idx_claim_embeddings_scope_model
+ ON claim_embeddings(scope,model);
 CREATE INDEX IF NOT EXISTS idx_audit_scope ON audit_events(scope);
 """
 
 
 class BrainStore:
-    def __init__(self, path: str | Path):
+    def __init__(self, path: str | Path, *, readonly: bool = False):
         self.path = Path(path).expanduser()
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.db = sqlite3.connect(str(self.path), timeout=5)
-        self.db.row_factory = sqlite3.Row
-        self.db.execute("PRAGMA foreign_keys=ON")
-        self.db.execute("PRAGMA journal_mode=WAL")
-        self.db.execute("PRAGMA busy_timeout=5000")
-        self.db.executescript(SCHEMA)
-        self.db.commit()
+        if readonly:
+            if not self.path.is_file():
+                raise ValueError("Read-only preview requires an initialized database")
+            self.db = sqlite3.connect(
+                self.path.resolve().as_uri() + "?mode=ro", timeout=5, uri=True
+            )
+            self.db.row_factory = sqlite3.Row
+            self.db.execute("PRAGMA foreign_keys=ON")
+            self.db.execute("PRAGMA query_only=ON")
+            self.db.execute("PRAGMA busy_timeout=5000")
+            # Avoid implicit schema migrations or other writes during preview.
+        else:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.db = sqlite3.connect(str(self.path), timeout=5)
+            self.db.row_factory = sqlite3.Row
+            self.db.execute("PRAGMA foreign_keys=ON")
+            self.db.execute("PRAGMA journal_mode=WAL")
+            self.db.execute("PRAGMA busy_timeout=5000")
+            self.db.executescript(SCHEMA)
+            self.db.commit()
 
     def close(self):
         self.db.close()

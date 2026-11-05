@@ -4,7 +4,7 @@
 
 A local-first, model-independent knowledge store for the Phi369 ecosystem, designed to give PhiOS, PhiMadaPrime, PhiBots, and PhiRSI traceable project memory without locking the architecture to any single LLM provider.
 
-**Status: Rungs 1–2 implemented, with Rung 3a WEAVER suggestions and Rung 3b local relation review ledger.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
+**Status: Rungs 1–2 implemented, with Rung 3a/3b WEAVER proposals and reviews and optional Rung 3c local hybrid retrieval.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
 
 ## Three brains
 
@@ -116,6 +116,21 @@ phitribrain relation-review --scope PhiOS --relation rel_REPLACE_ME --outcome ne
 
 Review outcomes are `accepted`, `rejected` or `needs_context`. **Accepted is not proof of claim truth**, and the original relationship remains `proposed`. To revisit an outcome, specify the exact latest `--supersedes rrev_...` review ID. The CLI requires an interactive terminal; review labels are **not authenticated**. See [Relation Review](docs/RELATION_REVIEW.md).
 
+## Rung 3c: opt-in local embedding and measured hybrid search
+
+Use an installed **local Ollama embedding model** to add semantic matching without losing WITNESS citations. Preview does not contact a model. Indexing requires explicit `--apply`, which sends selected claim statements and quoted evidence only to `127.0.0.1:11434`.
+
+```bash
+phitribrain embed-index --scope PhiOS --model embeddinggemma
+phitribrain embed-index --scope PhiOS --model embeddinggemma --apply
+phitribrain hybrid --scope PhiOS --model embeddinggemma --query "offline memory design"
+phitribrain hybrid-eval --scope PhiOS --model embeddinggemma --corpus ./my-evaluation.json --k 5
+```
+
+Hybrid search uses SQLite FTS5 + local cosine similarity with reciprocal rank fusion, then revalidates exact source hashes and quotes. An evaluated JSON corpus compares recall@k, precision@k and MRR against lexical search. Scores are retrieval heuristics, **never truth confidence**.
+
+See [Hybrid Retrieval](docs/HYBRID_RETRIEVAL.md) for setup, scope limits and privacy implications.
+
 ## Manual review
 
 `phitribrain review` requires an interactive terminal and an exact typed confirmation. It records only a **local review annotation**. Reviewer labels are not authenticated, and no agent gains permission to run actions as a consequence.
@@ -131,6 +146,7 @@ Review outcomes are `accepted`, `rejected` or `needs_context`. **Accepted is not
 - Quote-backed citation search, observation age warnings and append-only claim validity annotations
 - Deterministic, bounded WEAVER lexical link suggestions with explicit preview/apply and transaction rollback
 - Append-only relation review annotations, full history, optimistic revision checks and interactive CLI confirmation
+- Optional loopback Ollama embeddings, per-model cached vectors, hybrid ranked claim retrieval and judged evaluation metrics
 - Transaction-coupled, hash-chained audit events
 - Markdown/JSON snapshot export to an empty destination
 - Local Obsidian Markdown vault preview, transactional import, conflict protection, and path-mapping rollback
@@ -143,7 +159,7 @@ Review outcomes are `accepted`, `rejected` or `needs_context`. **Accepted is not
 - **Not tamper-proof.** An owner with database write access can rewrite or truncate both records and audit history; externally anchored snapshots are future work.
 - **Not an automatic truth engine.** Exact quoted text proves what a source says, not that the statement is accurate.
 - **GitHub ingestion is limited.** Rung 2 supports public, immutable-commit, explicitly allowlisted UTF-8 files. Private GitHub data, CI event ingestion, and PhiOS integration remain future work.
-- **Not semantic search.** Search uses lexical FTS5; optional local embeddings are proposed for a later rung.
+- **Semantic matching is optional and bounded.** Standard WITNESS search remains FTS5 lexical. Rung 3c uses explicit local Ollama embeddings for hybrid retrieval of existing claims, not a truth engine. No model comes bundled.
 - **Not two-way sync.** Editing exported Markdown does not update SQLite. Local Obsidian import is opt-in and snapshots source files; it never writes back to a vault.
 - **Prompt-injection risk.** Imported text must always be treated as untrusted data, never agent instructions.
 

@@ -19,8 +19,9 @@
 - GitHub import: source ID, repository, pinned commit SHA, file path, verified Git blob SHA, retrieval timestamp
 - vault revision: historical source snapshots and versioned active path mapping
 - time annotation: append-only, explicitly asserted valid-time interval; original recorded time preserved
+- local embedding: disposable scope/model/claim derived vector, content hash, dimension and index time
 
-Tables include sources, source_origins, claims, relations, weaver_proposals, relation_reviews, decisions, decision_evidence, audit_events, github_imports, vault_batches, vault_notes, vault_revisions, claim_time_annotations, and SQLite FTS5 search_fts.
+Tables include sources, source_origins, claims, relations, weaver_proposals, relation_reviews, decisions, decision_evidence, audit_events, github_imports, vault_batches, vault_notes, vault_revisions, claim_time_annotations, claim_embeddings, and SQLite FTS5 search_fts.
 
 ## 9 invariants
 
@@ -30,7 +31,7 @@ Tables include sources, source_origins, claims, relations, weaver_proposals, rel
 4. Require evidence claims for every decision proposal.
 5. Explicit project scope on every data operation.
 6. No application-level silent writes: record an audit event transactionally.
-7. No autonomous execution, background polling, or external network calls.
+7. No autonomous execution or background polling. Explicitly requested local Ollama model calls and allowlisted public GitHub reads have separate documented boundaries.
 8. Use portable open formats without provider lock-in.
 9. Treat every imported source as untrusted data, never model instructions.
 
@@ -56,7 +57,7 @@ flowchart TD
 
 ## Persistence and query boundaries
 
-One SQLite database is used by three logical roles, not three separate LLMs. Rung 2a adds explicit, public, commit-pinned GitHub HTTPS reads in WITNESS; no automatic crawler or remote write capability. SQLite WAL is enabled for local concurrency. FTS5 performs scoped lexical retrieval. Rung 2c additionally restricts citation search to claims with exact quote anchors, warns about old observations, and abstains on missing quote-backed evidence. There is no vector store, LLM reasoning API, multi-user authentication, or network listener.
+One SQLite database is used by three logical roles, not three separate LLMs. Rung 2a adds explicit, public, commit-pinned GitHub HTTPS reads in WITNESS; no automatic crawler or remote write capability. SQLite WAL is enabled for local concurrency. FTS5 performs scoped lexical retrieval. Rung 2c additionally restricts citation search to claims with exact quote anchors, warns about old observations, and abstains on missing quote-backed evidence. Rung 3c adds bounded, locally cached embeddings from an optional explicitly invoked loopback Ollama service and RRF hybrid retrieval. No external embedding provider, generative reasoning agent, multi-user authentication or network listener is provided.
 
 Project scopes are organizational labels and cannot be trusted as authorization boundaries. Model text injected into a source must never be passed into an agent's instruction channel.
 
@@ -70,6 +71,6 @@ Project scopes are organizational labels and cannot be trusted as authorization 
 - **Obsidian:** reversible importer plus optional Markdown snapshot export
 - **MCP:** resources/tools after authentication, authorization, audit, and sandboxing
 
-Future retrieval should check authorization, combine FTS with optional local embeddings, rerank by relevance and source freshness, and abstain when claims lack reliable supporting evidence.
+Future retrieval should check authenticated authorization, evaluate quality on a representative corpus, add source-freshness reranking and abstain when reliable supporting evidence is absent. Retrieval scores remain uncalibrated.
 
 **The three brains are functional subsystems, not claims about self-aware software or separate consciousnesses.**
