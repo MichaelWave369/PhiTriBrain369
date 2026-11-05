@@ -13,7 +13,7 @@
 ## Rung 2: grounded source ingestion
 
 - [x] Read-only public GitHub allowlist adapter with commit SHAs and retrieval timestamps (Rung 2a)
-- [ ] Obsidian vault importer with dry-run, rollback, and conflict detection
+- [x] Local Obsidian Markdown vault importer with dry-run, atomic batches, mapping rollback, and conflict detection (Rung 2b)
 - [ ] Valid-time and recorded-time fields for claims
 - [ ] Citation builder and source recency warnings
 - [ ] Evaluation corpus for quote anchoring and retrieval correctness
