@@ -96,6 +96,16 @@ This prototype is a local proof of concept, **not** a production knowledge-secur
 - Existing decisions and historical audit records remain unchanged. Historical reviews have no newly forged attestations.
 - Any process that controls SQLite or the Python code can bypass this local gate. There is no MFA, rate limiter, external identity provider, or account recovery system.
 
+## Rung 4a read-only operator snapshots
+
+- The new bridge is an **offline, opt-in export**. No MCP/HTTP listener, model requests, autonomous handoffs or network access is introduced.
+- Source, relationship and decision IDs must appear explicitly in a strict manifest. Every relation and decision dependency claim must also be selected; missing dependencies fail closed.
+- The reader opens SQLite in read-only/query-only mode, rechecks WITNESS quote anchors and digests, and exports only minimal records with explicit unverified/non-executable labels.
+- The consumer application string is **not identity or an authorization grant**. File permissions and host process trust determine real local access.
+- JSON snapshots are unsigned and unsynchronized. The content digest is a corruption check, not proof that data came from a trusted source.
+- Terminal preview may expose selected quotes in logs. Exports create a new local file with restrictive permissions where possible, and never replace an existing file or symlink.
+- The snapshot is **not** permission to run tools, launch PhiBots, deploy, or read unlisted records. Validate all future consumer-side rendering and trust controls before real integrations.
+
 ## Before production integrations
 
 Add authenticated identities and per-agent capabilities, validate files and symlinks for export/import, rate limit requests, encrypt protected storage, establish immutable external audit anchors and tested backups, introduce authenticated review and execution gateways, and build prompt-injection/red-team tests on every adapter.
