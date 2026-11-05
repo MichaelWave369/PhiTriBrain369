@@ -157,6 +157,18 @@ CREATE TABLE IF NOT EXISTS vault_revisions (
  UNIQUE(batch_id,relative_path)
 );
 CREATE INDEX IF NOT EXISTS idx_vault_rev_batch ON vault_revisions(batch_id);
+CREATE TABLE IF NOT EXISTS claim_time_annotations (
+ seq INTEGER PRIMARY KEY AUTOINCREMENT,
+ id TEXT NOT NULL UNIQUE,
+ scope TEXT NOT NULL,
+ claim_id TEXT NOT NULL REFERENCES claims(id),
+ valid_from TEXT,
+ valid_until TEXT,
+ basis TEXT NOT NULL,
+ actor TEXT NOT NULL,
+ recorded_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_claim_time_lookup ON claim_time_annotations(scope,claim_id,seq);
 CREATE INDEX IF NOT EXISTS idx_audit_scope ON audit_events(scope);
 """
 

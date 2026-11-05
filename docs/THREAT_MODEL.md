@@ -32,6 +32,15 @@ This prototype is a local proof of concept, **not** a production knowledge-secur
 - There remains a small filesystem race window, especially on platforms without secure no-follow opening.
 - The CLI does not provide full multi-user authentication, authorization or encryption.
 
+## Citation and time annotation considerations
+
+- A quote-backed claim proves only that an imported source contains specific text. It cannot prove the source is true, current, authentic, lawful, or relevant.
+- Immutable GitHub SHA citations refer to an earlier snapshot; an observation recorded today may still refer to old code. Freshness warnings measure time since observation, not current repository status.
+- Recorded time is when a claim or source entered the ledger. Asserted valid-time intervals are unverified annotations stored append-only; actor labels are not authenticated.
+- Old vault snapshots remain queryable after updates and rollback, with warnings when no active path mapping exists.
+- Hash and offset checks detect some accidental data corruption but do not prevent coordinated database rewriting by a privileged local actor.
+- Results include source text/quotes and paths, which may reveal confidential data if exposed through logs, exported JSON or future agent APIs. Do not connect this to an untrusted network service.
+
 ## Before production integrations
 
 Add authenticated identities and per-agent capabilities, validate files and symlinks for export/import, rate limit requests, encrypt protected storage, establish immutable external audit anchors and tested backups, introduce authenticated review and execution gateways, and build prompt-injection/red-team tests on every adapter.

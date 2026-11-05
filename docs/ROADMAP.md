@@ -14,9 +14,9 @@
 
 - [x] Read-only public GitHub allowlist adapter with commit SHAs and retrieval timestamps (Rung 2a)
 - [x] Local Obsidian Markdown vault importer with dry-run, atomic batches, mapping rollback, and conflict detection (Rung 2b)
-- [ ] Valid-time and recorded-time fields for claims
-- [ ] Citation builder and source recency warnings
-- [ ] Evaluation corpus for quote anchoring and retrieval correctness
+- [x] Append-only, explicitly asserted claim valid-time annotations, alongside existing recorded-time fields (Rung 2c)
+- [x] Quote-backed citation retrieval, abstention, source observation-age warnings (Rung 2c)
+- [x] Initial deterministic quote-anchoring / retrieval fixture (smoke test); expand benchmark in Rung 3
 
 ## Rung 3: reviewable knowledge synthesis
 

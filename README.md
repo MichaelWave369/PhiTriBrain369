@@ -4,7 +4,7 @@
 
 A local-first, model-independent knowledge store for the Phi369 ecosystem, designed to give PhiOS, PhiMadaPrime, PhiBots, and PhiRSI traceable project memory without locking the architecture to any single LLM provider.
 
-**Status: Rung 1 complete; Rung 2 GitHub and local Obsidian WITNESS importers available.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
+**Status: Rung 1 complete; Rung 2 GitHub/Obsidian imports and quote-backed WITNESS retrieval available.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
 
 ## Three brains
 
@@ -80,6 +80,18 @@ phitribrain vault --scope PhiOS --vault-id LabNotes --directory "/path/to/Obsidi
 
 Changed notes are refused by default. You must opt into changed revisions with `--accept-updates`; every import batch is transactional and returns a rollback identifier. Rolling back restores earlier active path mappings, while keeping historical sources and audit events. **The importer never changes or restores the original Obsidian files.** See [Obsidian importer guide](docs/OBSIDIAN_IMPORT.md).
 
+## Rung 2c: evidence with receipts
+
+WITNESS now retrieves only **quote-anchored claims**, not unsupported model-generated answers. Each match includes exact source ID/digest, quote offsets and line numbers, GitHub commit links when available, observation-age warnings, and explicit attribution-only status.
+
+```bash
+phitribrain evidence --scope PhiOS --query "local architecture"
+phitribrain cite --scope PhiOS --claim clm_REPLACE_ME
+phitribrain claim-time --scope PhiOS --claim clm_REPLACE_ME --from 2026-01-01 --until 2026-12-31 --basis "Human-noted design window"
+```
+
+Claim valid-time intervals are append-only **assertions**, never truth verification. Retrieval abstains when no quote-backed claims exist. Read [Evidence Retrieval](docs/EVIDENCE_RETRIEVAL.md) for examples and limitations.
+
 ## Manual review
 
 `phitribrain review` requires an interactive terminal and an exact typed confirmation. It records only a **local review annotation**. Reviewer labels are not authenticated, and no agent gains permission to run actions as a consequence.
@@ -92,10 +104,11 @@ Changed notes are refused by default. You must opt into changed revisions with `
 - Proposed supports/contradicts/related links, always within a single project scope
 - Evidence-backed decision proposals with one-time human review annotations
 - SQLite FTS5 search, scoped result inspection, record summaries
+- Quote-backed citation search, observation age warnings and append-only claim validity annotations
 - Transaction-coupled, hash-chained audit events
 - Markdown/JSON snapshot export to an empty destination
 - Local Obsidian Markdown vault preview, transactional import, conflict protection, and path-mapping rollback
-- Standard-library Python implementation and 12 regression tests
+- Standard-library Python implementation and cross-platform regression tests
 
 ## Important limitations
 
@@ -103,7 +116,7 @@ Changed notes are refused by default. You must opt into changed revisions with `
 - **Not a security boundary.** Scopes organize content; they are not authorization, isolation between users, or validated agent identities.
 - **Not tamper-proof.** An owner with database write access can rewrite or truncate both records and audit history; externally anchored snapshots are future work.
 - **Not an automatic truth engine.** Exact quoted text proves what a source says, not that the statement is accurate.
-- **GitHub ingestion is limited.** Rung 2 supports public, immutable-commit, explicitly allowlisted UTF-8 files. Private GitHub data, CI event ingestion, Obsidian import, and PhiOS integration remain future work.
+- **GitHub ingestion is limited.** Rung 2 supports public, immutable-commit, explicitly allowlisted UTF-8 files. Private GitHub data, CI event ingestion, and PhiOS integration remain future work.
 - **Not semantic search.** Search uses lexical FTS5; optional local embeddings are proposed for a later rung.
 - **Not two-way sync.** Editing exported Markdown does not update SQLite. Local Obsidian import is opt-in and snapshots source files; it never writes back to a vault.
 - **Prompt-injection risk.** Imported text must always be treated as untrusted data, never agent instructions.
