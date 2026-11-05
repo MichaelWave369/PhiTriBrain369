@@ -127,6 +127,24 @@ class RelationReviewTests(unittest.TestCase):
             self.store, scope="PhiOS", relation_id=self.rel
         )["reviews"]), 1)
 
+    def test_rejected_conflict_no_longer_triggers_active_warning(self):
+        from phitribrain.evidence import cited_claim
+
+        before = cited_claim(
+            self.store, scope="PhiOS", claim_id=self.a["id"]
+        )
+        self.assertTrue(any("proposed contradictory" in w for w in before["warnings"]))
+        first = self.review(outcome="rejected")
+        after = cited_claim(
+            self.store, scope="PhiOS", claim_id=self.a["id"]
+        )
+        self.assertFalse(any("proposed contradictory" in w for w in after["warnings"]))
+        self.review(outcome="needs_context", supersedes=first["review_id"])
+        again = cited_claim(
+            self.store, scope="PhiOS", claim_id=self.a["id"]
+        )
+        self.assertTrue(any("proposed contradictory" in w for w in again["warnings"]))
+
     def test_scope_isolation(self):
         with self.assertRaisesRegex(ValueError, "requested scope"):
             relation_detail(self.store, scope="Other", relation_id=self.rel)
