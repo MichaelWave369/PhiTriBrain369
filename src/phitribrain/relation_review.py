@@ -6,6 +6,8 @@ execution authority, or authenticate the reviewer.
 """
 from __future__ import annotations
 
+import json
+
 from .evidence import cited_claim
 from .store import BrainStore, new_id, utcnow, validate_scope
 
@@ -15,9 +17,13 @@ QUEUE_STATES = ("pending", *OUTCOMES, "all")
 
 def _relation(store: BrainStore, scope: str, relation_id: str):
     row = store.db.execute(
-        "SELECT r.*, w.method AS proposal_method, w.lexical_score "
+        "SELECT r.*, w.method AS proposal_method, w.lexical_score, "
+        "sw.model AS semantic_model, sw.cosine AS semantic_cosine, "
+        "sw.context_json AS semantic_context_json "
         "FROM relations r LEFT JOIN weaver_proposals w "
         "ON w.relation_id=r.id AND w.scope=r.scope "
+        "LEFT JOIN semantic_weaver_proposals sw "
+        "ON sw.relation_id=r.id AND sw.scope=r.scope "
         "WHERE r.scope=? AND r.id=?",
         (scope, relation_id),
     ).fetchone()
@@ -58,6 +64,12 @@ def relation_detail(store: BrainStore, *, scope: str, relation_id: str) -> dict:
         "proposal_rationale": relation["rationale"],
         "proposal_method": relation["proposal_method"],
         "lexical_score_not_confidence": relation["lexical_score"],
+        "semantic_model": relation["semantic_model"],
+        "semantic_cosine_not_confidence": relation["semantic_cosine"],
+        "semantic_context_notes": (
+            json.loads(relation["semantic_context_json"])
+            if relation["semantic_context_json"] is not None else []
+        ),
         "relation_database_state": relation["state"],
         "review_status": current["outcome"] if current else "pending",
         "last_review_id": current["id"] if current else None,
@@ -82,6 +94,8 @@ def relation_queue(store: BrainStore, *, scope: str, status: str = "pending",
     join = (
         "FROM relations r "
         "LEFT JOIN weaver_proposals w ON w.relation_id=r.id AND w.scope=r.scope "
+        "LEFT JOIN semantic_weaver_proposals sw "
+        "ON sw.relation_id=r.id AND sw.scope=r.scope "
         "LEFT JOIN relation_reviews rv ON rv.seq=("
         "SELECT MAX(t.seq) FROM relation_reviews t "
         "WHERE t.scope=r.scope AND t.relation_id=r.id) "
@@ -96,6 +110,7 @@ def relation_queue(store: BrainStore, *, scope: str, status: str = "pending",
         "SELECT r.id,r.left_claim,r.right_claim,r.relation,"
         "r.rationale,r.created_at AS proposed_at,"
         "w.method AS proposal_method,w.lexical_score,"
+        "sw.model AS semantic_model,sw.cosine AS semantic_cosine,"
         "COALESCE(rv.outcome,'pending') AS review_status,"
         "rv.id AS last_review_id,rv.reviewer AS last_reviewer "
         + join + "ORDER BY r.created_at,r.id LIMIT ? OFFSET ?",
