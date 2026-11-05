@@ -290,19 +290,34 @@ class HybridTests(unittest.TestCase):
             "SELECT COUNT(*) FROM claim_embeddings"
         ).fetchone()[0], 0)
 
-    def test_cli_index_and_search_with_injected_local_provider(self):
-        output = io.StringIO()
-        with patch("phitribrain.hybrid.local_ollama_embed",
-                   side_effect=fake_embed), redirect_stdout(output):
-            code = main(["--db", str(self.path), "embed-index",
-                         "--scope", "PhiOS", "--model", MODEL, "--apply"])
-        # Default function binding is fixed at function definition; inject with
-        # a direct API invocation and test CLI search by overriding defaults.
-        self.assertIn(code, (0, 2))
-        if code == 2:
-            self.index()
-        else:
-            self.assertEqual(json.loads(output.getvalue())["indexed"], 3)
+    def test_cli_index_and_search_with_injected_offline_provider(self):
+        from phitribrain import hybrid as hybrid_module
+
+        def offline_build(*args, **kwargs):
+            return hybrid_module.build_index(
+                *args, embed_fn=fake_embed, **kwargs
+            )
+
+        def offline_search(*args, **kwargs):
+            return hybrid_module.hybrid_search(
+                *args, embed_fn=fake_embed, **kwargs
+            )
+
+        def run(*arguments):
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = main(["--db", str(self.path), *arguments])
+            self.assertEqual(status, 0)
+            return json.loads(output.getvalue())
+
+        with (patch("phitribrain.cli.build_index", side_effect=offline_build),
+              patch("phitribrain.cli.hybrid_search", side_effect=offline_search)):
+            indexed = run("embed-index", "--scope", "PhiOS",
+                          "--model", MODEL, "--apply")
+            self.assertEqual(indexed["indexed"], 3)
+            result = run("hybrid", "--scope", "PhiOS", "--model", MODEL,
+                         "--query", "private offline memory", "--limit", "1")
+            self.assertEqual(result["matches"][0]["claim_id"], self.local["id"])
 
     def test_local_endpoint_request_is_fixed_and_no_redirects(self):
         calls = {}
