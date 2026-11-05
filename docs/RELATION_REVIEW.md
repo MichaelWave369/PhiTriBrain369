@@ -36,7 +36,7 @@ The CLI requires an interactive terminal and the exact confirmation:
 REVIEW rel_REPLACE_ME NEEDS_CONTEXT
 ~~~
 
-Outcomes are `accepted`, `rejected` or `needs_context`. They refer to whether you *accept the proposed relationship*, **not** whether either original claim is true. The reviewer label is arbitrary text and **not authenticated**. All reviews are recorded with an audit event.
+Outcomes are `accepted`, `rejected` or `needs_context`. They refer to whether you *accept the proposed relationship*, **not** whether either original claim is true. On legacy scopes without enrolled accounts, reviewer labels remain unauthenticated. With Rung 3e's optional local reviewer gate enabled for a scope, `--reviewer` must be a matching enrolled username with owner/reviewer role, and the CLI prompts for that user's password. This is **not verified real-world identity**. All reviews are recorded with an audit event. See [Local Reviewer Access](LOCAL_REVIEWER_ACCESS.md).
 
 ## Revisit an earlier assessment
 
@@ -59,12 +59,12 @@ If a contradiction proposal has been explicitly reviewed and **rejected**, WITNE
 - Writes are SQLite transactions containing both the new review annotation and a hash-chained audit event.
 - Both quote anchors and source SHA-256 digests are checked before accepting the annotation.
 - Scopes are organizational labels, not access-control boundaries.
-- The CLI refuses noninteractive review, but this is **not cryptographic proof of human identity**. The Python API can also annotate directly; protect the local database and process access.
+- The CLI refuses noninteractive review, but this is **not cryptographic proof of human identity**. If the scope has enrolled accounts, both the CLI and Python `annotate_relation` function require an enrolled user's password. Other Python/SQLite mutation APIs are not gated, so protect local database and process access.
 - No claim gets promoted to fact; no decision/action authority is conveyed. The `relations.state` column remains `proposed`.
 - Database administrators can rewrite the entire ledger and audit trail. This is not a tamper-proof security system.
 - Never expose the local review CLI or SQLite to untrusted users as a network service.
 - WITNESS citations and review details contain quotes and source paths. Do not import secret or confidential notes without separate controls.
-- There is no semantic contradiction verification, contextual truth resolution, automatic merging of duplicates, model inference, or user authentication in this rung.
+- There is no semantic contradiction verification, contextual truth resolution or automatic merging of duplicates. Rung 3e optionally enforces local password possession for relation-review annotations but does not provide shared-service authentication or verified identity.
 
 ## Future rung
 
