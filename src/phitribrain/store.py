@@ -201,6 +201,15 @@ CREATE TABLE IF NOT EXISTS claim_embeddings (
 );
 CREATE INDEX IF NOT EXISTS idx_claim_embeddings_scope_model
  ON claim_embeddings(scope,model);
+CREATE TABLE IF NOT EXISTS semantic_weaver_proposals (
+ relation_id TEXT PRIMARY KEY REFERENCES relations(id),
+ scope TEXT NOT NULL,
+ model TEXT NOT NULL,
+ cosine REAL NOT NULL,
+ context_json TEXT NOT NULL,
+ created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_semantic_weaver_scope ON semantic_weaver_proposals(scope);
 CREATE INDEX IF NOT EXISTS idx_audit_scope ON audit_events(scope);
 """
 

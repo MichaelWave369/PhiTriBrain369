@@ -4,7 +4,7 @@
 
 A local-first, model-independent knowledge store for the Phi369 ecosystem, designed to give PhiOS, PhiMadaPrime, PhiBots, and PhiRSI traceable project memory without locking the architecture to any single LLM provider.
 
-**Status: Rungs 1–2 implemented, with Rung 3a/3b WEAVER proposals and reviews and optional Rung 3c local hybrid retrieval.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
+**Status: Rungs 1–2 implemented; Rung 3a–3d adds reviewed WEAVER suggestions, local hybrid retrieval, and context-aware semantic pairing.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
 
 ## Three brains
 
@@ -131,6 +131,18 @@ Hybrid search uses SQLite FTS5 + local cosine similarity with reciprocal rank fu
 
 See [Hybrid Retrieval](docs/HYBRID_RETRIEVAL.md) for setup, scope limits and privacy implications.
 
+## Rung 3d: semantic neighbors with historical context
+
+WEAVER can now propose **review-only** relationships from already indexed, local embeddings. It flags different Git commits, non-overlapping asserted validity periods, and same-source evidence instead of confusing similarity with truth.
+
+```bash
+phitribrain weave-semantic --scope PhiOS --model embeddinggemma
+phitribrain weave-semantic --scope PhiOS --model embeddinggemma --apply
+phitribrain relation-queue --scope PhiOS --status pending
+```
+
+Preview is read-only and **neither preview nor apply calls Ollama**: this rung uses existing local vectors. Apply adds only `related` proposals that remain subject to human review. See [Contextual WEAVER](docs/CONTEXTUAL_WEAVER.md).
+
 ## Manual review
 
 `phitribrain review` requires an interactive terminal and an exact typed confirmation. It records only a **local review annotation**. Reviewer labels are not authenticated, and no agent gains permission to run actions as a consequence.
@@ -147,6 +159,7 @@ See [Hybrid Retrieval](docs/HYBRID_RETRIEVAL.md) for setup, scope limits and pri
 - Deterministic, bounded WEAVER lexical link suggestions with explicit preview/apply and transaction rollback
 - Append-only relation review annotations, full history, optimistic revision checks and interactive CLI confirmation
 - Optional loopback Ollama embeddings, per-model cached vectors, hybrid ranked claim retrieval and judged evaluation metrics
+- Offline semantic-neighbor proposal generation, commit/date/source context cautions, and review queue provenance
 - Transaction-coupled, hash-chained audit events
 - Markdown/JSON snapshot export to an empty destination
 - Local Obsidian Markdown vault preview, transactional import, conflict protection, and path-mapping rollback
