@@ -113,6 +113,19 @@ CREATE VIRTUAL TABLE IF NOT EXISTS search_fts USING fts5(
 );
 CREATE INDEX IF NOT EXISTS idx_claims_scope ON claims(scope);
 CREATE INDEX IF NOT EXISTS idx_decisions_scope ON decisions(scope);
+CREATE TABLE IF NOT EXISTS github_imports (
+ import_id TEXT PRIMARY KEY,
+ scope TEXT NOT NULL,
+ source_id TEXT NOT NULL REFERENCES sources(id),
+ repository TEXT NOT NULL,
+ commit_sha TEXT NOT NULL,
+ path TEXT NOT NULL,
+ blob_sha TEXT NOT NULL,
+ origin TEXT NOT NULL,
+ fetched_at TEXT NOT NULL,
+ UNIQUE(scope, repository, commit_sha, path)
+);
+CREATE INDEX IF NOT EXISTS idx_github_imports_source ON github_imports(source_id);
 CREATE INDEX IF NOT EXISTS idx_audit_scope ON audit_events(scope);
 """
 
@@ -279,6 +292,59 @@ class BrainStore:
             self._event(scope, "decision.review", {"id": decision_id, "outcome": outcome, "reviewer": reviewer})
         return {"id": decision_id, "status": outcome, "reviewed_by": reviewer}
 
+
+    def record_github_import(self, *, scope: str, source_id: str, repository: str,
+                             commit: str, path: str, blob_sha: str, origin: str,
+                             fetched_at: str) -> dict:
+        """Add a structured, idempotent GitHub provenance record.
+
+        This links an existing source to an immutable commit and Git blob ID.
+        Does not prove that the underlying source statement is factual.
+        """
+        scope = validate_scope(scope)
+        source = self.db.execute(
+            "SELECT id FROM sources WHERE id=? AND scope=?", (source_id, scope)
+        ).fetchone()
+        if not source:
+            raise ValueError("GitHub import source must exist in the same scope")
+        import_id = "ghi_" + sha(canonical_json(
+            [scope, repository, commit, path]
+        ))[:24]
+        existing = self.db.execute(
+            "SELECT source_id,blob_sha,origin FROM github_imports "
+            "WHERE scope=? AND repository=? AND commit_sha=? AND path=?",
+            (scope, repository, commit, path),
+        ).fetchone()
+        if existing:
+            if (existing["source_id"], existing["blob_sha"], existing["origin"]) != (
+                source_id, blob_sha, origin
+            ):
+                raise ValueError("Conflicting contents for an already pinned GitHub import")
+            return {"id": import_id, "new_import": False}
+        with self.db:
+            self.db.execute(
+                "INSERT INTO github_imports(import_id,scope,source_id,repository,"
+                "commit_sha,path,blob_sha,origin,fetched_at) VALUES(?,?,?,?,?,?,?,?,?)",
+                (import_id, scope, source_id, repository, commit, path,
+                 blob_sha, origin, fetched_at),
+            )
+            self._event(scope, "github.import", {
+                "id": import_id, "source_id": source_id, "repository": repository,
+                "commit": commit, "path": path, "blob_sha": blob_sha,
+                "origin": origin, "fetched_at": fetched_at,
+            })
+        return {"id": import_id, "new_import": True}
+
+    def github_provenance(self, *, scope: str, source_id: str) -> list[dict]:
+        """Return structured provenance for an already recorded source."""
+        scope = validate_scope(scope)
+        return [dict(row) for row in self.db.execute(
+            "SELECT repository,commit_sha,path,blob_sha,origin,fetched_at "
+            "FROM github_imports WHERE scope=? AND source_id=? "
+            "ORDER BY fetched_at,repository,path",
+            (scope, source_id),
+        )]
+
     def search(self, *, scope: str, query: str, limit: int = 10) -> list[dict]:
         """Scoped FTS5 lexical search. Does not execute arbitrary query syntax."""
         scope = validate_scope(scope)
@@ -312,6 +378,9 @@ class BrainStore:
                     "SELECT origin FROM source_origins WHERE source_id=?", (record_id,)
                 )
             ]
+            data["github_provenance"] = self.github_provenance(
+                scope=scope, source_id=record_id
+            )
         if table == "decisions":
             data["evidence"] = [
                 r["claim_id"] for r in self.db.execute(
