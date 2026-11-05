@@ -34,6 +34,8 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 def _validate_model(model: str) -> str:
     if not isinstance(model, str) or not MODEL_RE.fullmatch(model):
         raise ValueError("Model must be a nonempty local Ollama model identifier")
+    if model.lower().endswith(":cloud"):
+        raise ValueError("Cloud-routed Ollama model names are forbidden")
     return model
 
 
@@ -81,7 +83,11 @@ def local_ollama_embed(text: str, model: str) -> list[float]:
         data = json.loads(raw.decode("utf-8"))
     except (UnicodeError, json.JSONDecodeError) as exc:
         raise ValueError("Local Ollama returned malformed JSON") from exc
-    if not isinstance(data, dict) or data.get("model") != model:
+    returned_model = data.get("model") if isinstance(data, dict) else None
+    acceptable = {model}
+    if ":" not in model:
+        acceptable.add(model + ":latest")
+    if returned_model not in acceptable:
         raise ValueError("Local Ollama response model did not match the requested model")
     vectors = data.get("embeddings")
     if not isinstance(vectors, list) or len(vectors) != 1:
