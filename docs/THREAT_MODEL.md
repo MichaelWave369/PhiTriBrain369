@@ -77,6 +77,16 @@ This prototype is a local proof of concept, **not** a production knowledge-secur
 - Original claims and manual relationships are not rewritten; an explicit apply adds only proposed, audited links. Scopes are labels, not permissions.
 - This is not an automated contradiction-resolution engine, authenticated review service, or execution authorization gateway.
 
+## Optional local reviewer password gate (Rung 3e)
+
+- WEAVER relation-review submissions require enrolled local owner/reviewer passwords **only after** a scope has its first owner account. Existing scopes without accounts remain unauthenticated by design.
+- Passwords are prompted without CLI flags; random-salted PBKDF2-HMAC-SHA256 verifiers reside in SQLite and no plaintext password is stored in audit events. Credentials are still exposed to the local process memory and susceptible to offline guessing if an attacker copies the database.
+- Roles are scoped (`owner`, `reviewer`, `observer`) and enforced inside relation-review transactions. Disabled accounts cannot review; an owner must authorize later enrollment or status changes. The last enabled owner cannot be disabled.
+- This is **only local password possession**. The first local process that bootstraps a scope can become owner, and an OS/SQLite administrator or modified Python module bypasses any gate. There is no verified human identity or tamper-proof approval.
+- Other source/claim mutations, WEAVER proposal generation, the STEWARD decision-review command, and local read-only queries remain outside this gate. Do not expose any of them to untrusted users or a network.
+- No MFA, rate limits, password rotation/recovery, server sessions, enterprise SSO, or user-to-user data isolation. The scope gate must not be represented as production-grade RBAC.
+- The original relation stays `proposed` even after an authenticated review; accepted links are human assessments, not proofs of claim truth or action authorizations.
+
 ## Before production integrations
 
 Add authenticated identities and per-agent capabilities, validate files and symlinks for export/import, rate limit requests, encrypt protected storage, establish immutable external audit anchors and tested backups, introduce authenticated review and execution gateways, and build prompt-injection/red-team tests on every adapter.
