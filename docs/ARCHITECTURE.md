@@ -16,8 +16,9 @@
 - relation: proposed, typed connection between claims
 - decision: evidence-linked recommendation and review status
 - audit event: transactional change log with a previous-hash link
+- GitHub import: source ID, repository, pinned commit SHA, file path, verified Git blob SHA, retrieval timestamp
 
-Tables: sources, source_origins, claims, relations, decisions, decision_evidence, audit_events, and SQLite FTS5 search_fts.
+Tables: sources, source_origins, claims, relations, decisions, decision_evidence, audit_events, github_imports, and SQLite FTS5 search_fts.
 
 ## 9 invariants
 
@@ -53,7 +54,7 @@ flowchart TD
 
 ## Persistence and query boundaries
 
-One SQLite database is used by three logical roles, not three separate LLMs. SQLite WAL is enabled for local concurrency. FTS5 performs scoped lexical retrieval; there is no vector store, LLM reasoning API, multi-user authentication, or network listener in Rung 1.
+One SQLite database is used by three logical roles, not three separate LLMs. Rung 2a adds explicit, public, commit-pinned GitHub HTTPS reads in WITNESS; no automatic crawler or remote write capability. SQLite WAL is enabled for local concurrency. FTS5 performs scoped lexical retrieval; there is no vector store, LLM reasoning API, multi-user authentication, or network listener in Rung 1.
 
 Project scopes are organizational labels and cannot be trusted as authorization boundaries. Model text injected into a source must never be passed into an agent's instruction channel.
 
