@@ -4,7 +4,7 @@
 
 A local-first, model-independent knowledge store for the Phi369 ecosystem, designed to give PhiOS, PhiMadaPrime, PhiBots, and PhiRSI traceable project memory without locking the architecture to any single LLM provider.
 
-**Status: Rung 1 complete; Rung 2 GitHub/Obsidian imports and quote-backed WITNESS retrieval available.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
+**Status: Rung 1 and Rung 2 implemented; Rung 3a deterministic WEAVER proposals available.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
 
 ## Three brains
 
@@ -92,6 +92,18 @@ phitribrain claim-time --scope PhiOS --claim clm_REPLACE_ME --from 2026-01-01 --
 
 Claim valid-time intervals are append-only **assertions**, never truth verification. Retrieval abstains when no quote-backed claims exist. Read [Evidence Retrieval](docs/EVIDENCE_RETRIEVAL.md) for examples and limitations.
 
+## Rung 3a: WEAVER review-only suggestions
+
+WEAVER can now **preview possible duplicates, narrow contradictory phrases and vocabulary-overlapping claims**, using only existing quote-anchored WITNESS claims. No language model is required.
+
+```bash
+phitribrain weave --scope PhiOS
+phitribrain weave --scope PhiOS --threshold 0.65 --limit 20
+phitribrain weave --scope PhiOS --apply
+```
+
+Preview does not change relationships; `--apply` atomically creates **proposed** links only, with audit records. Similarity scores are lexical heuristics, **not truth/confidence estimates**. Existing manual links are respected, and imported sources are never altered. See [WEAVER Proposals](docs/WEAVER_PROPOSALS.md).
+
 ## Manual review
 
 `phitribrain review` requires an interactive terminal and an exact typed confirmation. It records only a **local review annotation**. Reviewer labels are not authenticated, and no agent gains permission to run actions as a consequence.
@@ -105,6 +117,7 @@ Claim valid-time intervals are append-only **assertions**, never truth verificat
 - Evidence-backed decision proposals with one-time human review annotations
 - SQLite FTS5 search, scoped result inspection, record summaries
 - Quote-backed citation search, observation age warnings and append-only claim validity annotations
+- Deterministic, bounded WEAVER lexical link suggestions with explicit preview/apply and transaction rollback
 - Transaction-coupled, hash-chained audit events
 - Markdown/JSON snapshot export to an empty destination
 - Local Obsidian Markdown vault preview, transactional import, conflict protection, and path-mapping rollback
