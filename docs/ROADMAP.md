@@ -26,6 +26,7 @@
 - [ ] Semantic contradiction reasoning, duplicate consolidation and contextual/temporal resolution (beyond Rung 3a heuristics)
 
 - [x] Rung 3c: optional loopback Ollama embedding index, scoped FTS5 + cosine RRF retrieval and quote-backed matches (small local caches only)
+- [x] Rung 3d: cached-vector semantic neighbor proposals, exact citations, Git commit and asserted validity-window cautions, and review-queue provenance
 - [ ] Human-reviewed contradiction resolution and consolidation of equivalent claims (Rung 3a only proposes candidates)
 - [ ] Confidence calibration; abstention when evidence is insufficient
 - [ ] Authenticated human review queue and provenance-aware edits
