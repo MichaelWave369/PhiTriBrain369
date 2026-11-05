@@ -68,6 +68,15 @@ This prototype is a local proof of concept, **not** a production knowledge-secur
 - Judged retrieval scores apply only to the supplied evaluation corpus; no accuracy promise follows from mocked tests.
 - The prototype scans a small scope-local vector cache in Python, not a production vector database. No multi-user ACLs or authenticated agent permissions.
 
+## Offline semantic relationship proposals
+
+- Semantic WEAVER uses cached embeddings only. Its preview and apply commands never request a model or contact the network.
+- Cosine similarity does not establish entailment, contradiction, independence, or factual reliability. Every suggestion is `related`, unverified, and manually reviewable.
+- Provenance comparisons flag different immutable GitHub commits, common source snapshots and nonoverlapping **asserted** validity windows. These annotations are not independently verified.
+- All source hashes and exact quote anchors are checked, while stale/missing cache entries are skipped. Model dimension errors and corrupted indexed evidence fail closed.
+- Original claims and manual relationships are not rewritten; an explicit apply adds only proposed, audited links. Scopes are labels, not permissions.
+- This is not an automated contradiction-resolution engine, authenticated review service, or execution authorization gateway.
+
 ## Before production integrations
 
 Add authenticated identities and per-agent capabilities, validate files and symlinks for export/import, rate limit requests, encrypt protected storage, establish immutable external audit anchors and tested backups, introduce authenticated review and execution gateways, and build prompt-injection/red-team tests on every adapter.
