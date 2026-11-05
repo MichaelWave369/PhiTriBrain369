@@ -1,0 +1,13 @@
+{
+  "scope": "PhiTriBrain369",
+  "repositories": [
+    {
+      "repository": "MichaelWave369/PhiTriBrain369",
+      "commit": "336a479b1b301cf3e7404890f5923a4adeee4c72",
+      "paths": [
+        "README.md",
+        "docs/ARCHITECTURE.md"
+      ]
+    }
+  ]
+}
