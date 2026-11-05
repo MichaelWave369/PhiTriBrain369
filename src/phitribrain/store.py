@@ -169,6 +169,13 @@ CREATE TABLE IF NOT EXISTS claim_time_annotations (
  recorded_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_claim_time_lookup ON claim_time_annotations(scope,claim_id,seq);
+CREATE TABLE IF NOT EXISTS weaver_proposals (
+ relation_id TEXT PRIMARY KEY REFERENCES relations(id),
+ scope TEXT NOT NULL,
+ method TEXT NOT NULL CHECK(method IN ('exact_text','explicit_not_frame','lexical_overlap')),
+ lexical_score REAL NOT NULL,
+ created_at TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS idx_audit_scope ON audit_events(scope);
 """
 

@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from .store import BrainStore
+from .weaver import candidates as weaver_candidates, apply_candidates as apply_weaver
 from .evidence import annotate_claim_time, cited_claim, find_evidence
 from .vault_import import apply_vault, preview_vault, rollback_vault, scan_vault
 from .github_ingest import (
@@ -91,6 +92,11 @@ def parser() -> argparse.ArgumentParser:
     claim_time.add_argument("--until", dest="valid_until", help="Asserted latest validity date (YYYY-MM-DD)")
     claim_time.add_argument("--basis", required=True, help="Explain why this interval is asserted")
     claim_time.add_argument("--actor", default="local", help="Unauthenticated actor label")
+    weave = sub.add_parser("weave", help="WEAVER: preview bounded lexical relation suggestions")
+    weave.add_argument("--scope", required=True)
+    weave.add_argument("--threshold", type=float, default=0.72, help="Jaccard overlap threshold (0.3-1.0)")
+    weave.add_argument("--limit", type=int, default=30, help="Maximum suggestions per run (1-100)")
+    weave.add_argument("--apply", action="store_true", help="Save review-only proposed links")
     return p
 
 
@@ -115,6 +121,8 @@ def main(argv: list[str] | None = None) -> int:
             result = preview_github(prepare_github(parse_manifest(args.manifest)))
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0
+        if args.command == "weave" and not Path(args.db).expanduser().is_file():
+            raise ValueError("WEAVER preview requires an existing initialized database")
         with BrainStore(args.db) as store:
             if args.command == "init":
                 result = {"database": str(Path(args.db).resolve()), "created": True}
@@ -168,6 +176,17 @@ def main(argv: list[str] | None = None) -> int:
                 )
             elif args.command == "search":
                 result = store.search(scope=args.scope, query=args.query, limit=args.limit)
+            elif args.command == "weave":
+                if args.apply:
+                    result = apply_weaver(
+                        store, scope=args.scope, threshold=args.threshold,
+                        limit=args.limit,
+                    )
+                else:
+                    result = weaver_candidates(
+                        store, scope=args.scope, threshold=args.threshold,
+                        limit=args.limit,
+                    )
             elif args.command == "evidence":
                 result = find_evidence(
                     store, scope=args.scope, query=args.query, limit=args.limit,

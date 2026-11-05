@@ -20,8 +20,11 @@
 
 ## Rung 3: reviewable knowledge synthesis
 
+- [x] Rung 3a: bounded deterministic duplicate-text, narrow negation and lexical-overlap proposals with source-integrity checks, preview-only default, idempotent audited apply
+- [ ] Semantic contradiction reasoning, duplicate consolidation and contextual/temporal resolution (beyond Rung 3a heuristics)
+
 - [ ] Optional local embeddings plus hybrid search (FTS5 + vectors)
-- [ ] Contradiction proposals and de-duplication of equivalent claims
+- [ ] Human-reviewed contradiction resolution and consolidation of equivalent claims (Rung 3a only proposes candidates)
 - [ ] Confidence calibration; abstention when evidence is insufficient
 - [ ] Authenticated human review queue and provenance-aware edits
 - [ ] Retrieval evaluation: recall@k, MRR, citation precision, cross-scope leaks
