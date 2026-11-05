@@ -4,7 +4,7 @@
 
 A local-first, model-independent knowledge store for the Phi369 ecosystem, designed to give PhiOS, PhiMadaPrime, PhiBots, and PhiRSI traceable project memory without locking the architecture to any single LLM provider.
 
-**Status: Rung 1 implemented; Rung 2 public GitHub WITNESS adapter available.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
+**Status: Rung 1 complete; Rung 2 GitHub and local Obsidian WITNESS importers available.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
 
 ## Three brains
 
@@ -64,6 +64,22 @@ phitribrain github --manifest examples/github-allowlist.sample.json --apply
 
 Sources now preserve Git blob SHA, full commit SHA, file path, and retrieval time as structured provenance. No background crawling, private repository access, GitHub writes, agent instructions, or automatic claim extraction occurs. See [GitHub ingestion guide](docs/GITHUB_IMPORT.md).
 
+## Rung 2b: local Obsidian vault ingestion
+
+Preview a local Markdown vault without creating or changing SQLite:
+
+```bash
+phitribrain vault --scope PhiOS --vault-id LabNotes --directory "/path/to/ObsidianVault"
+```
+
+Apply explicitly, preserving each note's immutable source snapshot and an active path mapping:
+
+```bash
+phitribrain vault --scope PhiOS --vault-id LabNotes --directory "/path/to/ObsidianVault" --apply
+```
+
+Changed notes are refused by default. You must opt into changed revisions with `--accept-updates`; every import batch is transactional and returns a rollback identifier. Rolling back restores earlier active path mappings, while keeping historical sources and audit events. **The importer never changes or restores the original Obsidian files.** See [Obsidian importer guide](docs/OBSIDIAN_IMPORT.md).
+
 ## Manual review
 
 `phitribrain review` requires an interactive terminal and an exact typed confirmation. It records only a **local review annotation**. Reviewer labels are not authenticated, and no agent gains permission to run actions as a consequence.
@@ -78,6 +94,7 @@ Sources now preserve Git blob SHA, full commit SHA, file path, and retrieval tim
 - SQLite FTS5 search, scoped result inspection, record summaries
 - Transaction-coupled, hash-chained audit events
 - Markdown/JSON snapshot export to an empty destination
+- Local Obsidian Markdown vault preview, transactional import, conflict protection, and path-mapping rollback
 - Standard-library Python implementation and 12 regression tests
 
 ## Important limitations
@@ -88,7 +105,7 @@ Sources now preserve Git blob SHA, full commit SHA, file path, and retrieval tim
 - **Not an automatic truth engine.** Exact quoted text proves what a source says, not that the statement is accurate.
 - **GitHub ingestion is limited.** Rung 2 supports public, immutable-commit, explicitly allowlisted UTF-8 files. Private GitHub data, CI event ingestion, Obsidian import, and PhiOS integration remain future work.
 - **Not semantic search.** Search uses lexical FTS5; optional local embeddings are proposed for a later rung.
-- **Not two-way sync.** Editing exported Markdown does not update SQLite.
+- **Not two-way sync.** Editing exported Markdown does not update SQLite. Local Obsidian import is opt-in and snapshots source files; it never writes back to a vault.
 - **Prompt-injection risk.** Imported text must always be treated as untrusted data, never agent instructions.
 
 ## Development
