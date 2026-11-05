@@ -23,6 +23,15 @@ This prototype is a local proof of concept, **not** a production knowledge-secur
 - Project-scope checks for references, search, inspect, and decisions
 - Clear provenance and proposed/approved distinction
 
+## Local Obsidian import considerations
+
+- Vault note text is untrusted. Markdown links, frontmatter, embedded prompts and code examples remain inert data.
+- Import is opt-in, local-only, and bounded; scans skip hidden folders and refuse symlinks.
+- Import records remain in plaintext SQLite; rollback restores active path mappings but does not erase any historical source, index or audit data.
+- A few common credential patterns are blocked, but secret detection is incomplete. Sensitive vaults must not be imported without additional controls.
+- There remains a small filesystem race window, especially on platforms without secure no-follow opening.
+- The CLI does not provide full multi-user authentication, authorization or encryption.
+
 ## Before production integrations
 
 Add authenticated identities and per-agent capabilities, validate files and symlinks for export/import, rate limit requests, encrypt protected storage, establish immutable external audit anchors and tested backups, introduce authenticated review and execution gateways, and build prompt-injection/red-team tests on every adapter.
