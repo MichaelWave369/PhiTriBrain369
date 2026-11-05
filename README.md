@@ -1,7 +1,95 @@
 # Φ TriBrain 369
 
-Three brains. One accountable ledger.
+**Three brains. One accountable ledger.**
 
-Local-first, model-independent knowledge infrastructure for the Phi369 ecosystem.
+A local-first, model-independent knowledge store for the Phi369 ecosystem, designed to give PhiOS, PhiMadaPrime, PhiBots, and PhiRSI traceable project memory without locking the architecture to any single LLM provider.
 
-Rung 1 implementation is being proposed in a pull request.
+**Status: Rung 1 runnable prototype.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
+
+## Three brains
+
+| Brain | Responsibility | Non-negotiable rule |
+|---|---|---|
+| **01 WITNESS** | Record exact source text, digests, provenance, and quote-anchored claims | An attributed claim is not automatically true |
+| **02 WEAVER** | Propose relationships between claims (supports, contradicts, related) | Connections remain proposals, not assertions of fact |
+| **03 STEWARD** | Propose evidence-linked decisions; record human review | A review annotation is never permission to execute |
+
+All writes produce chained audit events. Local SQLite FTS5 provides lexical search. Markdown export produces a read-only snapshot compatible with Obsidian-style wikilinks. Runtime dependencies: Python standard library only.
+
+## Run locally
+
+Requirements: Python 3.10+ with SQLite FTS5. From the repository root:
+
+```bash
+python -m pip install -e .
+phitribrain init
+phitribrain ingest --scope PhiOS --file examples/first_source.md --title "First architecture note"
+```
+
+The ingest command returns a `src_...` ID. Replace `SOURCE_ID` with that value:
+
+```bash
+phitribrain claim --scope PhiOS --source SOURCE_ID --statement "Architecture separates responsibilities" --quote "three distinct responsibilities"
+```
+
+The claim command returns a `clm_...` ID. Replace `CLAIM_ID`:
+
+```bash
+phitribrain search --scope PhiOS --query "evidence decisions"
+phitribrain show --scope PhiOS --id CLAIM_ID
+phitribrain propose --scope PhiOS --title "Retain the local evidence ledger" --why "Sources need traceable provenance" --evidence CLAIM_ID
+phitribrain stats --scope PhiOS
+phitribrain audit
+phitribrain export --scope PhiOS --directory ./vault-export
+```
+
+## Weaver example
+
+After recording two quote-anchored claims in one scope:
+
+```bash
+phitribrain link --scope PhiOS --left CLAIM_ID_1 --right CLAIM_ID_2 --type supports --why "Both document local persistence"
+```
+
+The relation is created as **proposed**. No background fact-checker or autonomous execution occurs.
+
+## Manual review
+
+`phitribrain review` requires an interactive terminal and an exact typed confirmation. It records only a **local review annotation**. Reviewer labels are not authenticated, and no agent gains permission to run actions as a consequence.
+
+## Capabilities
+
+- Local UTF-8 file ingestion with 5 MB/source limit
+- SHA-256 deduplication per scope and separate origin records
+- Exact substring anchors for source-attributed claims
+- Proposed supports/contradicts/related links, always within a single project scope
+- Evidence-backed decision proposals with one-time human review annotations
+- SQLite FTS5 search, scoped result inspection, record summaries
+- Transaction-coupled, hash-chained audit events
+- Markdown/JSON snapshot export to an empty destination
+- Standard-library Python implementation and 12 regression tests
+
+## Important limitations
+
+- **Not encrypted.** Do not ingest passwords, API keys, personal secrets, or sensitive project data. Protect the underlying disk and backups.
+- **Not a security boundary.** Scopes organize content; they are not authorization, isolation between users, or validated agent identities.
+- **Not tamper-proof.** An owner with database write access can rewrite or truncate both records and audit history; externally anchored snapshots are future work.
+- **Not an automatic truth engine.** Exact quoted text proves what a source says, not that the statement is accurate.
+- **Not connected to GitHub, Obsidian, or PhiOS yet.** All ingestion is manually supplied and read-only from local text files.
+- **Not semantic search.** Search uses lexical FTS5; optional local embeddings are proposed for a later rung.
+- **Not two-way sync.** Editing exported Markdown does not update SQLite.
+- **Prompt-injection risk.** Imported text must always be treated as untrusted data, never agent instructions.
+
+## Development
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+GitHub Actions runs tests on Linux and Windows for Python 3.10 and 3.13.
+
+See [Architecture](docs/ARCHITECTURE.md), [Threat model](docs/THREAT_MODEL.md), and [Roadmap](docs/ROADMAP.md).
+
+**People Above Profit. Ledger Above Ego.**
+
+MIT License.
