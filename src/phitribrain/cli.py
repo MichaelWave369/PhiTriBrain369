@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from .store import BrainStore
+from .relation_review import annotate_relation, relation_detail, relation_queue
 from .weaver import candidates as weaver_candidates, apply_candidates as apply_weaver
 from .evidence import annotate_claim_time, cited_claim, find_evidence
 from .vault_import import apply_vault, preview_vault, rollback_vault, scan_vault
@@ -97,6 +98,23 @@ def parser() -> argparse.ArgumentParser:
     weave.add_argument("--threshold", type=float, default=0.72, help="Jaccard overlap threshold (0.3-1.0)")
     weave.add_argument("--limit", type=int, default=30, help="Maximum suggestions per run (1-100)")
     weave.add_argument("--apply", action="store_true", help="Save review-only proposed links")
+    queue = sub.add_parser("relation-queue", help="View pending and reviewed relation proposals")
+    queue.add_argument("--scope", required=True)
+    queue.add_argument("--status", default="pending",
+                       choices=("pending", "accepted", "rejected", "needs_context", "all"))
+    queue.add_argument("--limit", type=int, default=20)
+    queue.add_argument("--offset", type=int, default=0)
+    detail = sub.add_parser("relation-detail", help="Show source citations and full review history")
+    detail.add_argument("--scope", required=True)
+    detail.add_argument("--relation", required=True)
+    review_relation = sub.add_parser("relation-review", help="Append manual review of one proposed link")
+    review_relation.add_argument("--scope", required=True)
+    review_relation.add_argument("--relation", required=True)
+    review_relation.add_argument("--outcome", required=True,
+                                 choices=("accepted", "rejected", "needs_context"))
+    review_relation.add_argument("--reviewer", required=True, help="Local, unauthenticated label")
+    review_relation.add_argument("--reason", required=True, help="Explain the assessment with context")
+    review_relation.add_argument("--supersedes", help="Required previous review ID when revising")
     return p
 
 
@@ -121,8 +139,17 @@ def main(argv: list[str] | None = None) -> int:
             result = preview_github(prepare_github(parse_manifest(args.manifest)))
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0
-        if args.command == "weave" and not Path(args.db).expanduser().is_file():
-            raise ValueError("WEAVER preview requires an existing initialized database")
+        if args.command in ("weave", "relation-queue", "relation-detail", "relation-review") and not Path(args.db).expanduser().is_file():
+            raise ValueError("WEAVER commands require an existing initialized database")
+        if args.command == "relation-review":
+            if not sys.stdin.isatty():
+                raise ValueError("Relation reviews require an interactive terminal; automated approval disabled")
+            confirmation = f"REVIEW {args.relation} {args.outcome.upper()}"
+            print("Review is an annotation, not truth verification or action permission.",
+                  file=sys.stderr)
+            print(f"Type exactly: {confirmation}", file=sys.stderr)
+            if input("Confirmation: ").strip() != confirmation:
+                raise ValueError("Review confirmation did not match")
         with BrainStore(args.db) as store:
             if args.command == "init":
                 result = {"database": str(Path(args.db).resolve()), "created": True}
@@ -187,6 +214,19 @@ def main(argv: list[str] | None = None) -> int:
                         store, scope=args.scope, threshold=args.threshold,
                         limit=args.limit,
                     )
+            elif args.command == "relation-queue":
+                result = relation_queue(store, scope=args.scope,
+                                        status=args.status, limit=args.limit,
+                                        offset=args.offset)
+            elif args.command == "relation-detail":
+                result = relation_detail(store, scope=args.scope,
+                                         relation_id=args.relation)
+            elif args.command == "relation-review":
+                result = annotate_relation(
+                    store, scope=args.scope, relation_id=args.relation,
+                    outcome=args.outcome, reviewer=args.reviewer,
+                    reason=args.reason, supersedes=args.supersedes,
+                )
             elif args.command == "evidence":
                 result = find_evidence(
                     store, scope=args.scope, query=args.query, limit=args.limit,
