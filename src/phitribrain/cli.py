@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from .store import BrainStore
+from .vault_import import apply_vault, preview_vault, rollback_vault, scan_vault
 from .github_ingest import (
     apply as apply_github, parse_manifest, prepare as prepare_github,
     preview as preview_github,
@@ -64,12 +65,33 @@ def parser() -> argparse.ArgumentParser:
     github = sub.add_parser("github", help="WITNESS: preview commit-pinned public GitHub imports")
     github.add_argument("--manifest", required=True, help="Explicit JSON allowlist (repository, commit, paths)")
     github.add_argument("--apply", action="store_true", help="Write verified sources to local SQLite")
+    vault = sub.add_parser("vault", help="WITNESS: preview/apply/roll back local Markdown vault notes")
+    vault.add_argument("--scope", required=True)
+    vault.add_argument("--vault-id", required=True, help="Stable, nonsecret identifier for a vault")
+    vault.add_argument("--directory", help="Existing directory of Markdown notes")
+    vault.add_argument("--apply", action="store_true", help="Ingest selected notes into local SQLite")
+    vault.add_argument("--accept-updates", action="store_true", help="Allow newer note contents to replace active path mappings")
+    vault.add_argument("--rollback", metavar="BATCH_ID", help="Undo a prior import's active mappings")
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "vault" and not args.rollback:
+            if not args.directory:
+                raise ValueError("--directory is required for vault preview/import")
+            if args.accept_updates and not args.apply:
+                raise ValueError("--accept-updates requires --apply")
+            plans = scan_vault(
+                directory=args.directory, scope=args.scope, vault_id=args.vault_id
+            )
+            if not args.apply:
+                print(json.dumps(preview_vault(plans), ensure_ascii=False, indent=2))
+                return 0
+        if args.command == "vault" and args.rollback:
+            if args.apply or args.accept_updates or args.directory:
+                raise ValueError("--rollback cannot be combined with --apply, --accept-updates or --directory")
         if args.command == "github" and not args.apply:
             result = preview_github(prepare_github(parse_manifest(args.manifest)))
             print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -79,6 +101,14 @@ def main(argv: list[str] | None = None) -> int:
                 result = {"database": str(Path(args.db).resolve()), "created": True}
             elif args.command == "github":
                 result = apply_github(store, prepare_github(parse_manifest(args.manifest)))
+            elif args.command == "vault":
+                if args.rollback:
+                    result = rollback_vault(
+                        store, scope=args.scope, vault_id=args.vault_id,
+                        batch_id=args.rollback
+                    )
+                else:
+                    result = apply_vault(store, plans, accept_updates=args.accept_updates)
             elif args.command == "ingest":
                 file_path = Path(args.file)
                 if file_path.stat().st_size > 5_000_000:
