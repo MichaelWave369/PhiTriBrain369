@@ -4,7 +4,7 @@
 
 A local-first, model-independent knowledge store for the Phi369 ecosystem, designed to give PhiOS, PhiMadaPrime, PhiBots, and PhiRSI traceable project memory without locking the architecture to any single LLM provider.
 
-**Status: Rung 1 and Rung 2 implemented; Rung 3a deterministic WEAVER proposals available.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
+**Status: Rungs 1–2 implemented, with Rung 3a WEAVER suggestions and Rung 3b local relation review ledger.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
 
 ## Three brains
 
@@ -104,6 +104,18 @@ phitribrain weave --scope PhiOS --apply
 
 Preview does not change relationships; `--apply` atomically creates **proposed** links only, with audit records. Similarity scores are lexical heuristics, **not truth/confidence estimates**. Existing manual links are respected, and imported sources are never altered. See [WEAVER Proposals](docs/WEAVER_PROPOSALS.md).
 
+## Rung 3b: WEAVER's append-only review queue
+
+Explore pending or previously reviewed links, inspect the exact sources, then make a local, explicitly confirmed assessment:
+
+```bash
+phitribrain relation-queue --scope PhiOS --status pending
+phitribrain relation-detail --scope PhiOS --relation rel_REPLACE_ME
+phitribrain relation-review --scope PhiOS --relation rel_REPLACE_ME --outcome needs_context --reviewer "Local human" --reason "Compare the commits and timestamps"
+```
+
+Review outcomes are `accepted`, `rejected` or `needs_context`. **Accepted is not proof of claim truth**, and the original relationship remains `proposed`. To revisit an outcome, specify the exact latest `--supersedes rrev_...` review ID. The CLI requires an interactive terminal; review labels are **not authenticated**. See [Relation Review](docs/RELATION_REVIEW.md).
+
 ## Manual review
 
 `phitribrain review` requires an interactive terminal and an exact typed confirmation. It records only a **local review annotation**. Reviewer labels are not authenticated, and no agent gains permission to run actions as a consequence.
@@ -118,6 +130,7 @@ Preview does not change relationships; `--apply` atomically creates **proposed**
 - SQLite FTS5 search, scoped result inspection, record summaries
 - Quote-backed citation search, observation age warnings and append-only claim validity annotations
 - Deterministic, bounded WEAVER lexical link suggestions with explicit preview/apply and transaction rollback
+- Append-only relation review annotations, full history, optimistic revision checks and interactive CLI confirmation
 - Transaction-coupled, hash-chained audit events
 - Markdown/JSON snapshot export to an empty destination
 - Local Obsidian Markdown vault preview, transactional import, conflict protection, and path-mapping rollback
