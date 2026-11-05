@@ -159,6 +159,7 @@ def apply_vault(store: BrainStore, plans: list[dict], *, accept_updates: bool = 
     skipped = 0
     batch_id = "vbatch_" + uuid.uuid4().hex[:20]
     with store.db:
+        store.db.execute("BEGIN IMMEDIATE")
         for note in plans:
             current = store.db.execute(
                 "SELECT source_id,digest FROM vault_notes "
@@ -228,6 +229,7 @@ def rollback_vault(store: BrainStore, *, scope: str, vault_id: str, batch_id: st
     scope = validate_scope(scope)
     vault_id = validate_vault_id(vault_id)
     with store.db:
+        store.db.execute("BEGIN IMMEDIATE")
         batch = store.db.execute(
             "SELECT status FROM vault_batches WHERE id=? AND scope=? AND vault_id=?",
             (batch_id, scope, vault_id),
