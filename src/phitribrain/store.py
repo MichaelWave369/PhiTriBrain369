@@ -176,6 +176,19 @@ CREATE TABLE IF NOT EXISTS weaver_proposals (
  lexical_score REAL NOT NULL,
  created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS relation_reviews (
+ seq INTEGER PRIMARY KEY AUTOINCREMENT,
+ id TEXT NOT NULL UNIQUE,
+ scope TEXT NOT NULL,
+ relation_id TEXT NOT NULL REFERENCES relations(id),
+ outcome TEXT NOT NULL CHECK(outcome IN ('accepted','rejected','needs_context')),
+ reviewer TEXT NOT NULL,
+ reason TEXT NOT NULL,
+ previous_review_id TEXT REFERENCES relation_reviews(id),
+ created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_relation_reviews_scope_relation
+ ON relation_reviews(scope,relation_id,seq);
 CREATE INDEX IF NOT EXISTS idx_audit_scope ON audit_events(scope);
 """
 

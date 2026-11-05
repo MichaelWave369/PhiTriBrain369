@@ -161,8 +161,12 @@ def cited_claim(store: BrainStore, *, scope: str, claim_id: str,
     if row["state"] in ("disputed", "superseded"):
         warnings.append(f"Claim is marked {row['state']}")
     possible_conflicts = store.db.execute(
-        "SELECT COUNT(*) FROM relations WHERE scope=? AND relation='contradicts' "
-        "AND (left_claim=? OR right_claim=?)",
+        "SELECT COUNT(*) FROM relations r "
+        "WHERE r.scope=? AND r.relation='contradicts' "
+        "AND (r.left_claim=? OR r.right_claim=?) "
+        "AND COALESCE((SELECT rv.outcome FROM relation_reviews rv "
+        "WHERE rv.scope=r.scope AND rv.relation_id=r.id "
+        "ORDER BY rv.seq DESC LIMIT 1),'pending') <> 'rejected'",
         (scope, claim_id, claim_id),
     ).fetchone()[0]
     if possible_conflicts:

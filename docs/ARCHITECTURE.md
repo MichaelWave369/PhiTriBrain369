@@ -4,7 +4,7 @@
 
 **WITNESS (episodic/evidence)** stores source originals, SHA-256 digests, origins, and claims with verbatim quoted anchors. A document is evidence that *its text contains a statement*, not evidence that the statement is correct.
 
-**WEAVER (relational/semantic)** represents typed edges between claims. Supported edge types: supports, contradicts, related. All edges remain proposals. Rung 3a adds bounded deterministic lexical candidate matching (exact statement, narrow single-negation frame, keyword Jaccard), but no semantic inference, automatic synthesis or verified truth.
+**WEAVER (relational/semantic)** represents typed edges between claims. Supported edge types: supports, contradicts, related. All edges remain proposals. Rung 3a adds bounded deterministic lexical candidate matching (exact statement, narrow single-negation frame, keyword Jaccard). Rung 3b adds append-only local review annotations for proposed relationships; no semantic inference, automatic synthesis, authenticated identity, or verified truth.
 
 **STEWARD (procedural/decision)** records evidence-linked decision proposals and manual review annotations. Nothing is executed based on these records.
 
@@ -20,7 +20,7 @@
 - vault revision: historical source snapshots and versioned active path mapping
 - time annotation: append-only, explicitly asserted valid-time interval; original recorded time preserved
 
-Tables include sources, source_origins, claims, relations, weaver_proposals, decisions, decision_evidence, audit_events, github_imports, vault_batches, vault_notes, vault_revisions, claim_time_annotations, and SQLite FTS5 search_fts.
+Tables include sources, source_origins, claims, relations, weaver_proposals, relation_reviews, decisions, decision_evidence, audit_events, github_imports, vault_batches, vault_notes, vault_revisions, claim_time_annotations, and SQLite FTS5 search_fts.
 
 ## 9 invariants
 

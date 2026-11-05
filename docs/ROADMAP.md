@@ -21,6 +21,8 @@
 ## Rung 3: reviewable knowledge synthesis
 
 - [x] Rung 3a: bounded deterministic duplicate-text, narrow negation and lexical-overlap proposals with source-integrity checks, preview-only default, idempotent audited apply
+- [x] Rung 3b: local review queue, evidence-inspected accepted/rejected/needs_context annotations, append-only reassessment history and optimistic conflict protection
+- [ ] Authenticated review identities and actual reviewer permissions (not provided by the Rung 3b local CLI)
 - [ ] Semantic contradiction reasoning, duplicate consolidation and contextual/temporal resolution (beyond Rung 3a heuristics)
 
 - [ ] Optional local embeddings plus hybrid search (FTS5 + vectors)
