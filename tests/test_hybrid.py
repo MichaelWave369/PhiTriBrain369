@@ -1,6 +1,7 @@
 import io
 import json
 import math
+import sqlite3
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -184,6 +185,31 @@ class HybridTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     _unit_vector(v)
         self.assertEqual(_unit_vector([3, 4]), [0.6, 0.8])
+
+    def test_read_only_store_prevents_accidental_preview_writes(self):
+        before = self.store.db.execute(
+            "SELECT COUNT(*) FROM audit_events"
+        ).fetchone()[0]
+        with BrainStore(self.path, readonly=True) as readonly:
+            plan = index_plan(readonly, scope="PhiOS", model=MODEL)
+            self.assertEqual(plan["pending"], 3)
+            with self.assertRaises(sqlite3.OperationalError):
+                readonly.db.execute(
+                    "INSERT INTO audit_events(event_id,created_at,scope,"
+                    "operation,details_json,prev_hash,event_hash) "
+                    "VALUES('bad','time','PhiOS','bad','{}','x','y')"
+                )
+        self.assertEqual(self.store.db.execute(
+            "SELECT COUNT(*) FROM audit_events"
+        ).fetchone()[0], before)
+
+    def test_cloud_model_selector_fails_before_network(self):
+        with self.assertRaisesRegex(ValueError, "Cloud-routed"):
+            index_plan(self.store, scope="PhiOS", model="model:cloud")
+        with patch("urllib.request.build_opener",
+                   side_effect=AssertionError("Must not contact network")):
+            with self.assertRaisesRegex(ValueError, "Cloud-routed"):
+                local_ollama_embed("hello", "model:cloud")
 
     def test_model_and_query_limits(self):
         with self.assertRaises(ValueError):
