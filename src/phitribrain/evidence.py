@@ -7,7 +7,6 @@ annotation*, not independent verification of the original assertion.
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
-from urllib.parse import quote as url_quote
 
 from .store import BrainStore, SEARCH_WORDS, new_id, sha, utcnow, validate_scope
 
@@ -215,6 +214,8 @@ def find_evidence(store: BrainStore, *, scope: str, query: str,
     if not isinstance(limit, int) or not 1 <= limit <= 50:
         raise ValueError("limit must be from 1 to 50")
     timepoint = _as_of(as_of)
+    if not isinstance(stale_after_days, int) or not 1 <= stale_after_days <= 36500:
+        raise ValueError("stale_after_days must be an integer from 1 to 36500")
     tokens = SEARCH_WORDS.findall(query)[:16]
     if not tokens:
         return {"scope": scope, "query": query, "matches": [],
