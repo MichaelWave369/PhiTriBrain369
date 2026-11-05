@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from .store import BrainStore
+from .semantic_weaver import semantic_candidates, apply_semantic_candidates
 from .hybrid import build_index, evaluate_hybrid, hybrid_search, index_plan
 from .relation_review import annotate_relation, relation_detail, relation_queue
 from .weaver import candidates as weaver_candidates, apply_candidates as apply_weaver
@@ -132,6 +133,12 @@ def parser() -> argparse.ArgumentParser:
     metric.add_argument("--model", required=True)
     metric.add_argument("--corpus", required=True, help="Local JSON with scoped query and relevant claim IDs")
     metric.add_argument("--k", type=int, default=5)
+    semantic = sub.add_parser("weave-semantic", help="WEAVER: locally cached semantic neighbor suggestions with context")
+    semantic.add_argument("--scope", required=True)
+    semantic.add_argument("--model", required=True, help="Exact existing locally indexed embedding model")
+    semantic.add_argument("--min-cosine", type=float, default=0.82, help="Similarity threshold (0.5-1.0)")
+    semantic.add_argument("--limit", type=int, default=20, help="Maximum candidate links (1-30)")
+    semantic.add_argument("--apply", action="store_true", help="Save review-only RELATED suggestions")
     return p
 
 
@@ -158,7 +165,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command in (
             "weave", "relation-queue", "relation-detail", "relation-review",
-            "embed-index", "hybrid", "hybrid-eval"
+            "embed-index", "hybrid", "hybrid-eval", "weave-semantic"
         ) and not Path(args.db).expanduser().is_file():
             raise ValueError("Knowledge retrieval requires an existing initialized database")
         if args.command == "relation-review":
@@ -172,7 +179,7 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError("Review confirmation did not match")
         with BrainStore(
             args.db,
-            readonly=(args.command == "embed-index" and not args.apply),
+            readonly=(args.command in ("embed-index", "weave-semantic") and not args.apply),
         ) as store:
             if args.command == "init":
                 result = {"database": str(Path(args.db).resolve()), "created": True}
@@ -236,6 +243,17 @@ def main(argv: list[str] | None = None) -> int:
                     result = weaver_candidates(
                         store, scope=args.scope, threshold=args.threshold,
                         limit=args.limit,
+                    )
+            elif args.command == "weave-semantic":
+                if args.apply:
+                    result = apply_semantic_candidates(
+                        store, scope=args.scope, model=args.model,
+                        min_cosine=args.min_cosine, limit=args.limit,
+                    )
+                else:
+                    result = semantic_candidates(
+                        store, scope=args.scope, model=args.model,
+                        min_cosine=args.min_cosine, limit=args.limit,
                     )
             elif args.command == "relation-queue":
                 result = relation_queue(store, scope=args.scope,
