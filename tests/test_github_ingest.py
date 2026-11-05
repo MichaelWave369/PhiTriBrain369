@@ -184,6 +184,12 @@ class GitHubImportTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "at most 20"):
             parse_manifest(self.path)
 
+    def test_nonstr_scope_is_rejected(self):
+        self.manifest["scope"] = 369
+        self.write_manifest()
+        with self.assertRaisesRegex(ValueError, "scope must be a string"):
+            parse_manifest(self.path)
+
     def test_manifest_duplicate_json_keys_refused(self):
         self.path.write_text('{"scope":"PhiOS","scope":"Other","repositories":[]}', encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "Duplicate manifest key"):
@@ -204,7 +210,9 @@ class GitHubImportTests(unittest.TestCase):
                     blob_sha=_blob_sha(BODY), origin=plans[0]["origin"],
                     fetched_at=plans[0]["fetched_at"],
                 )
-            self.assertEqual(imported["imports"][0]["source_id"], plans[0]["scope"] and imported["imports"][0]["source_id"])
+            self.assertEqual(
+                store.summary(scope="PhiTriBrain369")["sources"], 2
+            )
 
 
 if __name__ == "__main__":
