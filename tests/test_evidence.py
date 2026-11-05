@@ -218,7 +218,7 @@ class EvidenceRetrievalTests(unittest.TestCase):
         from phitribrain.vault_import import apply_vault, rollback_vault, scan_vault
         root = Path(self.folder.name) / "vault"
         root.mkdir()
-        (root / "note.md").write_text(self.text, encoding="utf-8")
+        (root / "note.md").write_bytes(self.text.encode("utf-8"))
         plan = scan_vault(directory=root, scope="PhiOS", vault_id="Lab")
         batch = apply_vault(self.store, plan)
         rollback_vault(self.store, scope="PhiOS", vault_id="Lab",
