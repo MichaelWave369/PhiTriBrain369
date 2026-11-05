@@ -14,7 +14,7 @@ This prototype is a local proof of concept, **not** a production knowledge-secur
 
 ## Mitigations included
 
-- No automatic network, GitHub, model, or subprocess calls
+- No autonomous network requests or subprocess execution; existing allowlisted GitHub intake and explicitly requested local Ollama calls have separately documented trust boundaries
 - No automatic execution of decisions
 - Interactive, exact typed confirmation for CLI review annotations
 - SQLite parameterized queries and input validation
