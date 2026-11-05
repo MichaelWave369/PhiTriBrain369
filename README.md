@@ -4,7 +4,7 @@
 
 A local-first, model-independent knowledge store for the Phi369 ecosystem, designed to give PhiOS, PhiMadaPrime, PhiBots, and PhiRSI traceable project memory without locking the architecture to any single LLM provider.
 
-**Status: Rungs 1–2 implemented; Rung 3a–3d adds reviewed WEAVER suggestions, local hybrid retrieval, and context-aware semantic pairing.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
+**Status: Rungs 1–2 implemented; Rung 3a–3e adds WEAVER proposals/reviews, optional local semantic retrieval, and a local credential gate for relationship reviews.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
 
 ## Three brains
 
@@ -143,6 +143,19 @@ phitribrain relation-queue --scope PhiOS --status pending
 
 Preview is read-only and **neither preview nor apply calls Ollama**: this rung uses existing local vectors. Apply adds only `related` proposals that remain subject to human review. See [Contextual WEAVER](docs/CONTEXTUAL_WEAVER.md).
 
+## Rung 3e: opt-in local relation-review credentials
+
+Set up a **scope-local owner password** before using multiple reviewers. The first owner can enroll additional reviewers and observers, or disable an account. Passwords are entered through hidden terminal prompts, never command-line flags.
+
+```bash
+phitribrain reviewer-enroll --scope PhiOS --user localowner --role owner
+phitribrain reviewer-enroll --scope PhiOS --user curator1 --role reviewer --owner localowner
+phitribrain reviewer-list --scope PhiOS
+phitribrain reviewer-status --scope PhiOS --user curator1 --owner localowner --enabled no
+```
+
+Once a scope has any enrolled account, **WEAVER relation-review annotations require that username's password and an owner/reviewer role** even when called through the Python review API. Legacy scopes without accounts remain unprotected for compatibility. This is a local password gate, not real-world identity verification, multi-user authentication, or protection against DB owners. The STEWARD decision review path is not covered. See [Local Reviewer Access](docs/LOCAL_REVIEWER_ACCESS.md).
+
 ## Manual review
 
 `phitribrain review` requires an interactive terminal and an exact typed confirmation. It records only a **local review annotation**. Reviewer labels are not authenticated, and no agent gains permission to run actions as a consequence.
@@ -160,6 +173,7 @@ Preview is read-only and **neither preview nor apply calls Ollama**: this rung u
 - Append-only relation review annotations, full history, optimistic revision checks and interactive CLI confirmation
 - Optional loopback Ollama embeddings, per-model cached vectors, hybrid ranked claim retrieval and judged evaluation metrics
 - Offline semantic-neighbor proposal generation, commit/date/source context cautions, and review queue provenance
+- Optional local PBKDF2-HMAC reviewer password gate, owner/reviewer/observer roles, owner-authorized enrollment and disable controls
 - Transaction-coupled, hash-chained audit events
 - Markdown/JSON snapshot export to an empty destination
 - Local Obsidian Markdown vault preview, transactional import, conflict protection, and path-mapping rollback
@@ -168,7 +182,7 @@ Preview is read-only and **neither preview nor apply calls Ollama**: this rung u
 ## Important limitations
 
 - **Not encrypted.** Do not ingest passwords, API keys, personal secrets, or sensitive project data. Protect the underlying disk and backups.
-- **Not a security boundary.** Scopes organize content; they are not authorization, isolation between users, or validated agent identities.
+- **Not a security boundary.** Scopes organize content; they are not user/agent authorization boundaries. The optional WEAVER local reviewer gate validates password possession for relation annotations only; it does not provide host identity, broader database access control or protection from direct SQLite access.
 - **Not tamper-proof.** An owner with database write access can rewrite or truncate both records and audit history; externally anchored snapshots are future work.
 - **Not an automatic truth engine.** Exact quoted text proves what a source says, not that the statement is accurate.
 - **GitHub ingestion is limited.** Rung 2 supports public, immutable-commit, explicitly allowlisted UTF-8 files. Private GitHub data, CI event ingestion, and PhiOS integration remain future work.
