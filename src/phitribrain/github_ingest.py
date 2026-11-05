@@ -106,6 +106,8 @@ def parse_manifest(path: str | Path) -> dict:
         raise ValueError("Invalid GitHub manifest JSON") from exc
     if not isinstance(raw, dict) or set(raw) != {"scope", "repositories"}:
         raise ValueError("Manifest requires exactly 'scope' and 'repositories'")
+    if not isinstance(raw["scope"], str):
+        raise ValueError("Manifest scope must be a string")
     scope = validate_scope(raw["scope"])
     repos = raw["repositories"]
     if not isinstance(repos, list) or not 1 <= len(repos) <= 4:
@@ -166,7 +168,9 @@ def prepare(manifest: dict, fetch_json: Callable[[str], dict] = github_json) -> 
         key = (repo, commit)
         if key not in verified_commits:
             metadata = fetch_json(f"{root}/commits/{commit}")
-            if not isinstance(metadata, dict) or metadata.get("sha", "").lower() != commit:
+            if (not isinstance(metadata, dict)
+                    or not isinstance(metadata.get("sha"), str)
+                    or metadata["sha"].lower() != commit):
                 raise ValueError(f"GitHub did not return the exact pinned commit for {repo}")
             verified_commits.add(key)
         for path in entry["paths"]:
