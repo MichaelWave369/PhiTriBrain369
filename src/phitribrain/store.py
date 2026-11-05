@@ -11,6 +11,7 @@ import hashlib
 import json
 import re
 import sqlite3
+from contextlib import nullcontext
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -126,6 +127,36 @@ CREATE TABLE IF NOT EXISTS github_imports (
  UNIQUE(scope, repository, commit_sha, path)
 );
 CREATE INDEX IF NOT EXISTS idx_github_imports_source ON github_imports(source_id);
+CREATE TABLE IF NOT EXISTS vault_batches (
+ id TEXT PRIMARY KEY,
+ scope TEXT NOT NULL,
+ vault_id TEXT NOT NULL,
+ created_at TEXT NOT NULL,
+ status TEXT NOT NULL CHECK(status IN ('active','rolled_back')),
+ rolled_back_at TEXT
+);
+CREATE TABLE IF NOT EXISTS vault_notes (
+ scope TEXT NOT NULL,
+ vault_id TEXT NOT NULL,
+ relative_path TEXT NOT NULL,
+ source_id TEXT NOT NULL REFERENCES sources(id),
+ digest TEXT NOT NULL,
+ updated_at TEXT NOT NULL,
+ PRIMARY KEY(scope,vault_id,relative_path)
+);
+CREATE TABLE IF NOT EXISTS vault_revisions (
+ seq INTEGER PRIMARY KEY AUTOINCREMENT,
+ batch_id TEXT NOT NULL REFERENCES vault_batches(id),
+ scope TEXT NOT NULL,
+ vault_id TEXT NOT NULL,
+ relative_path TEXT NOT NULL,
+ previous_source_id TEXT REFERENCES sources(id),
+ previous_digest TEXT,
+ new_source_id TEXT NOT NULL REFERENCES sources(id),
+ new_digest TEXT NOT NULL,
+ UNIQUE(batch_id,relative_path)
+);
+CREATE INDEX IF NOT EXISTS idx_vault_rev_batch ON vault_revisions(batch_id);
 CREATE INDEX IF NOT EXISTS idx_audit_scope ON audit_events(scope);
 """
 
@@ -163,16 +194,18 @@ class BrainStore:
             (*fields, event_hash),
         )
 
-    def ingest(self, *, scope: str, title: str, body: str, origin: str, actor: str = "local") -> dict:
+    def ingest(self, *, scope: str, title: str, body: str, origin: str, actor: str = "local", defer_commit: bool = False) -> dict:
         """WITNESS: store exact UTF-8 text and a recorded origin."""
         scope = validate_scope(scope)
         if not title.strip() or not origin.strip() or not body.strip():
             raise ValueError("title, origin, and body must be nonempty")
         if len(body.encode("utf-8")) > 5_000_000:
             raise ValueError("Rung 1 text source limit is 5 MB")
+        if defer_commit and not self.db.in_transaction:
+            raise ValueError("defer_commit requires an active caller transaction")
         digest = sha(body)
         source_id = "src_" + sha(scope + "\x00" + digest)[:24]
-        with self.db:
+        with (nullcontext() if defer_commit else self.db):
             existing = self.db.execute(
                 "SELECT id FROM sources WHERE scope=? AND digest=?", (scope, digest)
             ).fetchone()
@@ -381,6 +414,13 @@ class BrainStore:
             data["github_provenance"] = self.github_provenance(
                 scope=scope, source_id=record_id
             )
+            data["vault_paths"] = [
+                {"vault_id": r["vault_id"], "relative_path": r["relative_path"]}
+                for r in self.db.execute(
+                    "SELECT vault_id,relative_path FROM vault_notes WHERE scope=? AND source_id=? "
+                    "ORDER BY vault_id,relative_path", (scope, record_id)
+                )
+            ]
         if table == "decisions":
             data["evidence"] = [
                 r["claim_id"] for r in self.db.execute(
