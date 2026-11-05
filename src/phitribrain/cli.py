@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from .store import BrainStore
+from .hybrid import build_index, evaluate_hybrid, hybrid_search, index_plan
 from .relation_review import annotate_relation, relation_detail, relation_queue
 from .weaver import candidates as weaver_candidates, apply_candidates as apply_weaver
 from .evidence import annotate_claim_time, cited_claim, find_evidence
@@ -115,6 +116,22 @@ def parser() -> argparse.ArgumentParser:
     review_relation.add_argument("--reviewer", required=True, help="Local, unauthenticated label")
     review_relation.add_argument("--reason", required=True, help="Explain the assessment with context")
     review_relation.add_argument("--supersedes", help="Required previous review ID when revising")
+    embed = sub.add_parser("embed-index", help="Preview or explicitly build a local Ollama claim vector index")
+    embed.add_argument("--scope", required=True)
+    embed.add_argument("--model", required=True, help="Installed LOCAL Ollama embedding model name")
+    embed.add_argument("--limit", type=int, default=20, help="Max newly indexed claims per call (1-100)")
+    embed.add_argument("--apply", action="store_true", help="Explicitly send selected claims to loopback Ollama")
+    hybrid = sub.add_parser("hybrid", help="Quote-backed lexical + local embedding RRF retrieval")
+    hybrid.add_argument("--scope", required=True)
+    hybrid.add_argument("--query", required=True)
+    hybrid.add_argument("--model", required=True)
+    hybrid.add_argument("--limit", type=int, default=10)
+    hybrid.add_argument("--min-cosine", type=float, default=0.15)
+    metric = sub.add_parser("hybrid-eval", help="Evaluate hybrid versus lexical on a human-judged corpus")
+    metric.add_argument("--scope", required=True)
+    metric.add_argument("--model", required=True)
+    metric.add_argument("--corpus", required=True, help="Local JSON with scoped query and relevant claim IDs")
+    metric.add_argument("--k", type=int, default=5)
     return p
 
 
@@ -139,8 +156,11 @@ def main(argv: list[str] | None = None) -> int:
             result = preview_github(prepare_github(parse_manifest(args.manifest)))
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0
-        if args.command in ("weave", "relation-queue", "relation-detail", "relation-review") and not Path(args.db).expanduser().is_file():
-            raise ValueError("WEAVER commands require an existing initialized database")
+        if args.command in (
+            "weave", "relation-queue", "relation-detail", "relation-review",
+            "embed-index", "hybrid", "hybrid-eval"
+        ) and not Path(args.db).expanduser().is_file():
+            raise ValueError("Knowledge retrieval requires an existing initialized database")
         if args.command == "relation-review":
             if not sys.stdin.isatty():
                 raise ValueError("Relation reviews require an interactive terminal; automated approval disabled")
@@ -231,6 +251,30 @@ def main(argv: list[str] | None = None) -> int:
                 result = find_evidence(
                     store, scope=args.scope, query=args.query, limit=args.limit,
                     as_of=args.as_of, stale_after_days=args.stale_after_days,
+                )
+            elif args.command == "embed-index":
+                if args.apply:
+                    result = build_index(
+                        store, scope=args.scope, model=args.model, limit=args.limit,
+                    )
+                else:
+                    plan = index_plan(
+                        store, scope=args.scope, model=args.model, limit=args.limit,
+                    )
+                    result = {k: v for k, v in plan.items() if k != "selected"}
+                    result["selected_claim_ids"] = [
+                        row["id"] for row in plan["selected"]
+                    ]
+            elif args.command == "hybrid":
+                result = hybrid_search(
+                    store, scope=args.scope, model=args.model,
+                    query=args.query, limit=args.limit,
+                    min_cosine=args.min_cosine,
+                )
+            elif args.command == "hybrid-eval":
+                result = evaluate_hybrid(
+                    store, scope=args.scope, model=args.model,
+                    corpus=args.corpus, k=args.k,
                 )
             elif args.command == "cite":
                 result = cited_claim(
