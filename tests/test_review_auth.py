@@ -221,17 +221,26 @@ class ReviewAuthTests(unittest.TestCase):
 
     def test_scope_isolation(self):
         self.owner()
-        self.assertFalse(review_gate_enabled(self.store, scope="Other"))
-        self.assertTrue(review_gate_enabled(self.store, scope="PhiOS"))
-        with self.assertRaises(ValueError):
+        enroll_reviewer(
+            self.store, scope="Other", username="otherowner",
+            role="owner", password=REVIEW_PW,
+        )
+        with self.assertRaisesRegex(ValueError, "Invalid or disabled"):
+            authorize_review(
+                self.store, scope="PhiOS", username="otherowner",
+                password=REVIEW_PW,
+            )
+        with self.assertRaisesRegex(ValueError, "Invalid or disabled"):
             authorize_review(
                 self.store, scope="Other", username="localowner",
                 password=OWNER_PW,
-            ) if review_gate_enabled(self.store, scope="Other") else enroll_reviewer(
-                self.store, scope="Other", username="notowner",
-                role="reviewer", password=REVIEW_PW,
             )
-        self.assertFalse(review_gate_enabled(self.store, scope="Other"))
+        self.assertEqual(len(list_reviewers(
+            self.store, scope="PhiOS"
+        )["accounts"]), 1)
+        self.assertEqual(len(list_reviewers(
+            self.store, scope="Other"
+        )["accounts"]), 1)
 
     def test_password_hash_is_salted_and_no_plaintext_in_audit(self):
         self.owner()
