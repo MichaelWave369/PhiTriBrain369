@@ -66,11 +66,11 @@ The export file can be opened by a trusted, locally running visualization, **aft
 
 A later rung can define an authenticated, least-privilege service protocol. This rung deliberately avoids exposing unprotected reads over HTTP or MCP.
 
-## Companion PhiMadaPrime R38 viewer (pending merge)
+## Companion PhiMadaPrime R38 viewer
 
-The existing [PhiMadaPrime R38 pull request #46](https://github.com/MichaelWave369/PhiMadaPrime/pull/46) adds a **manual, browser-local WITNESS / WEAVER / STEWARD snapshot viewer** under ThinkTank → Φ TriBrain 369. This is a downstream *consumer* of this unchanged Rung 4a format, not an API or new syncing protocol.
+The implementation is tracked in [PhiMadaPrime R38 pull request #46](https://github.com/MichaelWave369/PhiMadaPrime/pull/46) adds a **manual, browser-local WITNESS / WEAVER / STEWARD snapshot viewer** under ThinkTank → Φ TriBrain 369. This is a downstream *consumer* of this unchanged Rung 4a format, not an API or new syncing protocol.
 
-To try the combined workflow **after PR #46 is merged/deployed**, first create the original Rung 4a export with an explicit manifest whose consumer is PhiMadaPrime:
+To try the combined workflow **once the implementation has been merged and deployed**, first create the original Rung 4a export with an explicit manifest whose consumer is PhiMadaPrime:
 
     phitribrain bridge --manifest operator.json
     phitribrain bridge --manifest operator.json --output phi-operator-snapshot.json
@@ -79,7 +79,7 @@ Carefully review the exported quotes and paths for sensitive content. Then manua
 
 **Trust boundary:** that checksum is reproducible by an attacker and does not authenticate this producer, verify original source bytes, establish a real model identity, or grant permission. The R38 viewer does not write back to SQLite, invoke an LLM, automatically synchronize, upload the JSON, or bind claims cryptographically to PhiMadaPrime's existing R36 signed evidence and R37 Agentora provenance.
 
-For details see [PhiMadaPrime R38 integration guide](https://github.com/MichaelWave369/PhiMadaPrime/blob/feat/r38-tribrain-knowledge-bridge/docs/rung-38-tribrain-knowledge-bridge.md). No native PhiTriBrain application code or schema changes are required. An authenticated local service remains future work.
+For details see [PhiMadaPrime R38 integration guide](https://github.com/MichaelWave369/PhiMadaPrime/blob/main/docs/rung-38-tribrain-knowledge-bridge.md). No native PhiTriBrain application code or schema changes are required. An authenticated local service remains future work.
 
 ## Constraints and safety
 
