@@ -83,9 +83,18 @@ This prototype is a local proof of concept, **not** a production knowledge-secur
 - Passwords are prompted without CLI flags; random-salted PBKDF2-HMAC-SHA256 verifiers reside in SQLite and no plaintext password is stored in audit events. Credentials are still exposed to the local process memory and susceptible to offline guessing if an attacker copies the database.
 - Roles are scoped (`owner`, `reviewer`, `observer`) and enforced inside relation-review transactions. Disabled accounts cannot review; an owner must authorize later enrollment or status changes. The last enabled owner cannot be disabled.
 - This is **only local password possession**. The first local process that bootstraps a scope can become owner, and an OS/SQLite administrator or modified Python module bypasses any gate. There is no verified human identity or tamper-proof approval.
-- Other source/claim mutations, WEAVER proposal generation, the STEWARD decision-review command, and local read-only queries remain outside this gate. Do not expose any of them to untrusted users or a network.
+- Other source/claim mutations, WEAVER proposal generation, and local read-only queries remain outside this gate. Rung 3f extends local credential checking to STEWARD decision reviews, but does not authorize execution. Do not expose any of these APIs to untrusted users or a network.
 - No MFA, rate limits, password rotation/recovery, server sessions, enterprise SSO, or user-to-user data isolation. The scope gate must not be represented as production-grade RBAC.
 - The original relation stays `proposed` even after an authenticated review; accepted links are human assessments, not proofs of claim truth or action authorizations.
+
+## STEWARD decision review evidence attestation (Rung 3f)
+
+- For enrolled scopes, both CLI `review` and direct Python `BrainStore.review_decision` enforce the same scope-owner/reviewer password gate used by WEAVER. Legacy scopes remain unauthenticated.
+- Each new decision review rechecks the SHA-256 digest and exact quote anchor of every evidence claim before updating review status.
+- Attestation rows capture reviewer role, credential-check status and a digest of source/claim evidence IDs, source digests, and quote offsets; all writes and the audit event share a single SQLite transaction.
+- Enrolled password possession is **not** identity verification or tamper-proof approval. No new run/deploy tool, agent action, or network service is exposed.
+- Existing decisions and historical audit records remain unchanged. Historical reviews have no newly forged attestations.
+- Any process that controls SQLite or the Python code can bypass this local gate. There is no MFA, rate limiter, external identity provider, or account recovery system.
 
 ## Before production integrations
 
