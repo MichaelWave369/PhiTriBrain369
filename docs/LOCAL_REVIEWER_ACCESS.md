@@ -1,6 +1,6 @@
 # Rung 3e: local reviewer roles and password gate
 
-Rung 3e introduces an **optional, scope-specific local credential gate** for **WEAVER relation review annotations**. The main purpose is to stop someone from submitting an `accepted` or `rejected` relationship by typing an arbitrary reviewer label once a scope is enrolled.
+Rung 3e introduced an **optional, scope-specific local credential gate** for **WEAVER relation review annotations**. Rung 3f extends that same gate to **STEWARD decision reviews**. The local roles and enrolled passwords are shared by both review pathways. The main purpose is to stop someone from submitting an `accepted` or `rejected` relationship by typing an arbitrary reviewer label once a scope is enrolled.
 
 It is a **local password-possession check**, not verified human identity, enterprise SSO, a network authentication server, multi-user tenant isolation, a secure key vault or protection from anyone with direct filesystem or Python/SQLite access.
 
@@ -69,7 +69,7 @@ There is no password reset/recovery or rotation command in this rung. Back up an
 ## What this DOES NOT protect
 
 - It does **not** authenticate the reviewer to the operating system, verify legal identity, or protect against malicious local administrators or direct SQLite writes.
-- The original *STEWARD decision review* workflow remains a separate legacy annotation path, not covered by this WEAVER-specific gate.
+- Rung 3f also gates STEWARD decision-review writes after scope enrollment, and records a source-backed evidence attestation. It does not make approvals executable. See [STEWARD Review Gate](STEWARD_REVIEW_GATE.md).
 - Other local mutation functions (sources, claims, vector indexing, proposal generation) are not protected by account roles. **Do not deploy this code as a shared server or network-facing service.**
 - Existing legacy reviews stay visible; the system does not retroactively authenticate them.
 - Anyone able to change the source code or SQLite database can bypass or replace password verifiers, review annotations, or audit history. The hash chain is not externally anchored or tamper-proof.
@@ -78,6 +78,6 @@ There is no password reset/recovery or rotation command in this rung. Back up an
 - `reviewer-list`, `relation-queue` and `relation-detail` are local **read** operations and are not credential-gated. Local database access should be restricted to trusted OS users.
 - Security testing focuses on local application behavior. It is not a professional security audit or an authorization layer for PhiBots/PhiMadaPrime yet.
 
-**Future:** unify local review controls for STEWARD, add safe password rotation and recovery, and design an authenticated service boundary before enabling multi-agent access.
+**Future:** add safe password rotation and recovery, external identity and a properly authenticated service boundary before enabling multi-agent access.
 
 **Ledger Above Ego.**

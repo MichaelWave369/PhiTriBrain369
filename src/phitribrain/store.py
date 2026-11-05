@@ -98,6 +98,18 @@ CREATE TABLE IF NOT EXISTS decision_evidence (
  claim_id TEXT NOT NULL REFERENCES claims(id),
  PRIMARY KEY(decision_id, claim_id)
 );
+CREATE TABLE IF NOT EXISTS decision_review_attestations (
+ decision_id TEXT PRIMARY KEY REFERENCES decisions(id),
+ scope TEXT NOT NULL,
+ reviewer TEXT NOT NULL,
+ reviewer_role TEXT NOT NULL,
+ credential_checked INTEGER NOT NULL CHECK(credential_checked IN (0,1)),
+ evidence_sha256 TEXT NOT NULL,
+ evidence_json TEXT NOT NULL,
+ recorded_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_decision_review_attestations_scope
+ ON decision_review_attestations(scope);
 CREATE TABLE IF NOT EXISTS audit_events (
  seq INTEGER PRIMARY KEY AUTOINCREMENT,
  event_id TEXT NOT NULL UNIQUE,
@@ -385,23 +397,80 @@ class BrainStore:
             self._event(scope, "decision.propose", {"id": decision_id, "claim_ids": claim_ids, "actor": actor})
         return {"id": decision_id, "status": "proposed", "evidence": claim_ids}
 
-    def review_decision(self, *, scope: str, decision_id: str, outcome: str, reviewer: str) -> dict:
-        """A local approval annotation, not validated authentication or action permission."""
+    def review_decision(self, *, scope: str, decision_id: str, outcome: str,
+                        reviewer: str, auth_password: str | None = None) -> dict:
+        """Evidence-checked review annotation; never permission to execute.
+
+        After owner enrollment, this and WEAVER reviews use the same per-scope
+        local credential gate. Existing unenrolled scopes retain legacy mode.
+        """
+        from .evidence import cited_claim
+        from .review_auth import authorize_review
+
         scope = validate_scope(scope)
-        if outcome not in ("approved", "rejected") or not reviewer.strip():
+        if outcome not in ("approved", "rejected") or (
+            not isinstance(reviewer, str) or not reviewer.strip()
+        ):
             raise ValueError("outcome must be approved/rejected and reviewer must be nonempty")
         with self.db:
+            self.db.execute("BEGIN IMMEDIATE")
+            identity = authorize_review(
+                self, scope=scope, username=reviewer, password=auth_password
+            )
             existing = self.db.execute(
                 "SELECT status FROM decisions WHERE id=? AND scope=?", (decision_id, scope)
             ).fetchone()
             if not existing or existing["status"] != "proposed":
                 raise ValueError("decision not found, or it has already been reviewed")
+            evidence = self.db.execute(
+                "SELECT e.claim_id FROM decision_evidence e "
+                "JOIN claims c ON c.id=e.claim_id AND c.scope=? "
+                "WHERE e.decision_id=? ORDER BY e.claim_id",
+                (scope, decision_id),
+            ).fetchall()
+            if not evidence:
+                raise ValueError("Decision has no scoped supporting claims")
+            attest = []
+            for item in evidence:
+                citation = cited_claim(
+                    self, scope=scope, claim_id=item["claim_id"]
+                )
+                attest.append({
+                    "claim_id": item["claim_id"],
+                    "source_id": citation["citation"]["source_id"],
+                    "source_sha256": citation["citation"]["sha256"],
+                    "quote_offset": citation["citation"]["char_offset"],
+                })
+            digest = sha(canonical_json(attest))
+            now = utcnow()
             self.db.execute(
-                "UPDATE decisions SET status=?,reviewed_at=?,reviewed_by=? WHERE id=?",
-                (outcome, utcnow(), reviewer, decision_id),
+                "UPDATE decisions SET status=?,reviewed_at=?,reviewed_by=? "
+                "WHERE id=? AND scope=? AND status='proposed'",
+                (outcome, now, reviewer, decision_id, scope),
             )
-            self._event(scope, "decision.review", {"id": decision_id, "outcome": outcome, "reviewer": reviewer})
-        return {"id": decision_id, "status": outcome, "reviewed_by": reviewer}
+            self.db.execute(
+                "INSERT INTO decision_review_attestations("
+                "decision_id,scope,reviewer,reviewer_role,credential_checked,"
+                "evidence_sha256,evidence_json,recorded_at) VALUES(?,?,?,?,?,?,?,?)",
+                (decision_id, scope, reviewer, identity["role"],
+                 int(identity["credential_checked"]), digest,
+                 canonical_json(attest), now),
+            )
+            self._event(scope, "decision.review", {
+                "id": decision_id, "outcome": outcome, "reviewer": reviewer,
+                "reviewer_role": identity["role"],
+                "credential_checked": identity["credential_checked"],
+                "evidence_sha256": digest, "evidence_claims": [
+                    item["claim_id"] for item in attest
+                ],
+            })
+        return {
+            "id": decision_id, "status": outcome, "reviewed_by": reviewer,
+            "credential_checked": identity["credential_checked"],
+            "evidence_sha256": digest,
+            "truth_status": "source_attributed_review_only",
+            "execution_authorized": False,
+        }
 
 
     def record_github_import(self, *, scope: str, source_id: str, repository: str,
@@ -505,6 +574,21 @@ class BrainStore:
                     "SELECT claim_id FROM decision_evidence WHERE decision_id=?", (record_id,)
                 )
             ]
+            row = self.db.execute(
+                "SELECT reviewer,reviewer_role,credential_checked,"
+                "evidence_sha256,evidence_json,recorded_at "
+                "FROM decision_review_attestations WHERE decision_id=? AND scope=?",
+                (record_id, scope),
+            ).fetchone()
+            data["review_attestation"] = (
+                {
+                    **dict(row),
+                    "credential_checked": bool(row["credential_checked"]),
+                    "evidence": json.loads(row["evidence_json"]),
+                } if row else None
+            )
+            if data["review_attestation"] is not None:
+                del data["review_attestation"]["evidence_json"]
         return data
 
     def summary(self, *, scope: str) -> dict:

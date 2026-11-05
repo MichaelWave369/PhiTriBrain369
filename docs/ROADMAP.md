@@ -23,6 +23,7 @@
 - [x] Rung 3a: bounded deterministic duplicate-text, narrow negation and lexical-overlap proposals with source-integrity checks, preview-only default, idempotent audited apply
 - [x] Rung 3b: local review queue, evidence-inspected accepted/rejected/needs_context annotations, append-only reassessment history and optimistic conflict protection
 - [x] Rung 3e: opt-in, scope-local reviewer passwords and owner/reviewer/observer roles for WEAVER relation review (local application gate only)
+- [x] Rung 3f: extend the same local credential gate to STEWARD decision reviews with verified source quote/digest attestations and atomic audit
 - [ ] Verified identities, secure multi-user permissions, rate limiting, credential rotation/recovery, and network-service access controls
 - [ ] Semantic contradiction reasoning, duplicate consolidation and contextual/temporal resolution (beyond Rung 3a heuristics)
 
@@ -30,7 +31,7 @@
 - [x] Rung 3d: cached-vector semantic neighbor proposals, exact citations, Git commit and asserted validity-window cautions, and review-queue provenance
 - [ ] Human-reviewed contradiction resolution and consolidation of equivalent claims (Rung 3a only proposes candidates)
 - [ ] Confidence calibration; abstention when evidence is insufficient
-- [ ] Authenticated human review queue as a secure service; Rung 3e adds only a local WEAVER credential gate, not full multi-user identity or permissions
+- [ ] Authenticated human review queue as a secure service; Rungs 3e–3f add only local credential checks for relation and decision review, not full multi-user identity or permissions
 - [x] Rung 3c: reproducible judged-corpus recall@k, precision@k, MRR and scope-leak checks (initial offline-fixture evaluation)
 - [ ] Larger representative benchmark with citation precision judgments, quality thresholds and latency profiling
 

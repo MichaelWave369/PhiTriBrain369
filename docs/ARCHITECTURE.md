@@ -6,7 +6,7 @@
 
 **WEAVER (relational/semantic)** represents typed edges between claims. Supported edge types: supports, contradicts, related. All edges remain proposals. Rung 3a adds bounded deterministic lexical candidate matching (exact statement, narrow single-negation frame, keyword Jaccard). Rung 3b adds append-only local review annotations for proposed relationships. Rung 3d adds similarity-based `related` proposals with historical context alerts, without automatic contradiction inference, authenticated identity, or verified truth.
 
-**STEWARD (procedural/decision)** records evidence-linked decision proposals and manual review annotations. Nothing is executed based on these records.
+**STEWARD (procedural/decision)** records evidence-linked decision proposals and manual review annotations. Rung 3f adds scope-local credential checks for decision reviews and snapshots exact supporting-claim digests in a review attestation. Nothing is executed based on these records.
 
 ## 6 primary record types
 
@@ -22,8 +22,9 @@
 - local embedding: disposable scope/model/claim derived vector, content hash, dimension and index time
 - semantic proposal: relationship ID, local model name, cosine similarity (not confidence), and context-review notes
 - reviewer account: scope-local user label, role, enabled flag, salted password verifier and timestamps; no plaintext password persisted
+- decision-review attestation: local reviewer role/check metadata, immutable evidence references and a digest of the reviewed source claims
 
-Tables include sources, source_origins, claims, relations, weaver_proposals, relation_reviews, decisions, decision_evidence, audit_events, github_imports, vault_batches, vault_notes, vault_revisions, claim_time_annotations, claim_embeddings, semantic_weaver_proposals, reviewer_accounts, and SQLite FTS5 search_fts.
+Tables include sources, source_origins, claims, relations, weaver_proposals, relation_reviews, decisions, decision_evidence, audit_events, github_imports, vault_batches, vault_notes, vault_revisions, claim_time_annotations, claim_embeddings, semantic_weaver_proposals, reviewer_accounts, decision_review_attestations, and SQLite FTS5 search_fts.
 
 ## 9 invariants
 
@@ -59,7 +60,7 @@ flowchart TD
 
 ## Persistence and query boundaries
 
-One SQLite database is used by three logical roles, not three separate LLMs. Rung 2a adds explicit, public, commit-pinned GitHub HTTPS reads in WITNESS; no automatic crawler or remote write capability. SQLite WAL is enabled for local concurrency. FTS5 performs scoped lexical retrieval. Rung 2c additionally restricts citation search to claims with exact quote anchors, warns about old observations, and abstains on missing quote-backed evidence. Rung 3c adds bounded, locally cached embeddings from an optional explicitly invoked loopback Ollama service and RRF hybrid retrieval. No external embedding provider, generative reasoning agent, or network listener is provided. Rung 3e adds a voluntary scope-local password check for WEAVER relation review only; it is **not** a network identity system or general database authorization.
+One SQLite database is used by three logical roles, not three separate LLMs. Rung 2a adds explicit, public, commit-pinned GitHub HTTPS reads in WITNESS; no automatic crawler or remote write capability. SQLite WAL is enabled for local concurrency. FTS5 performs scoped lexical retrieval. Rung 2c additionally restricts citation search to claims with exact quote anchors, warns about old observations, and abstains on missing quote-backed evidence. Rung 3c adds bounded, locally cached embeddings from an optional explicitly invoked loopback Ollama service and RRF hybrid retrieval. No external embedding provider, generative reasoning agent, or network listener is provided. Rungs 3e–3f add optional scope-local password checks for WEAVER relation and STEWARD decision reviews; they are **not** a network identity system or general database authorization.
 
 Project scopes are organizational labels and cannot be trusted as authorization boundaries. Model text injected into a source must never be passed into an agent's instruction channel.
 

@@ -249,9 +249,14 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 if input("Confirmation: ").strip() != command:
                     raise ValueError("review confirmation did not match")
+                password = (
+                    getpass.getpass("Enrolled local reviewer password: ")
+                    if review_gate_enabled(store, scope=args.scope) else None
+                )
                 result = store.review_decision(
                     scope=args.scope, decision_id=args.decision,
                     outcome=args.outcome, reviewer=args.reviewer,
+                    auth_password=password,
                 )
             elif args.command == "search":
                 result = store.search(scope=args.scope, query=args.query, limit=args.limit)

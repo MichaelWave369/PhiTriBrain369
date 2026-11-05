@@ -4,7 +4,7 @@
 
 A local-first, model-independent knowledge store for the Phi369 ecosystem, designed to give PhiOS, PhiMadaPrime, PhiBots, and PhiRSI traceable project memory without locking the architecture to any single LLM provider.
 
-**Status: Rungs 1–2 implemented; Rung 3a–3e adds WEAVER proposals/reviews, optional local semantic retrieval, and a local credential gate for relationship reviews.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
+**Status: Rungs 1–2 implemented; Rung 3a–3f adds WEAVER proposals/reviews, optional local semantic retrieval, and scope-local credential checks for WEAVER and STEWARD reviews.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
 
 ## Three brains
 
@@ -156,9 +156,21 @@ phitribrain reviewer-status --scope PhiOS --user curator1 --owner localowner --e
 
 Once a scope has any enrolled account, **WEAVER relation-review annotations require that username's password and an owner/reviewer role** even when called through the Python review API. Legacy scopes without accounts remain unprotected for compatibility. This is a local password gate, not real-world identity verification, multi-user authentication, or protection against DB owners. The STEWARD decision review path is not covered. See [Local Reviewer Access](docs/LOCAL_REVIEWER_ACCESS.md).
 
+## Rung 3f: STEWARD decision review with evidence attestation
+
+STEWARD now uses the same optional owner/reviewer password gate as WEAVER. When a scope enrolls its first owner, both kinds of review require a valid enrolled password. Every STEWARD decision review checks the original quote-backed claims and records an audit-linked SHA-256 attestation of the evidence inspected.
+
+```bash
+phitribrain show --scope PhiOS --id dec_REPLACE_ME
+phitribrain review --scope PhiOS --decision dec_REPLACE_ME --outcome approved --reviewer curator1
+phitribrain audit
+```
+
+The CLI requires an interactive confirmation and prompts for the enrolled reviewer password when the scope is gated. Historical reviews are not reauthenticated. **Approved is an annotation, never a deployment or execution grant.** See [STEWARD Review Gate](docs/STEWARD_REVIEW_GATE.md).
+
 ## Manual review
 
-`phitribrain review` requires an interactive terminal and an exact typed confirmation. It records only a **local review annotation**. Reviewer labels are not authenticated, and no agent gains permission to run actions as a consequence.
+`phitribrain review` requires an interactive terminal and an exact typed confirmation. It records only a **local review annotation**. Legacy scopes without enrolled accounts accept unauthenticated labels; enrolled scopes require scope-local reviewer passwords. Neither type of review grants any agent permission to execute actions.
 
 ## Capabilities
 
@@ -173,7 +185,8 @@ Once a scope has any enrolled account, **WEAVER relation-review annotations requ
 - Append-only relation review annotations, full history, optimistic revision checks and interactive CLI confirmation
 - Optional loopback Ollama embeddings, per-model cached vectors, hybrid ranked claim retrieval and judged evaluation metrics
 - Offline semantic-neighbor proposal generation, commit/date/source context cautions, and review queue provenance
-- Optional local PBKDF2-HMAC reviewer password gate, owner/reviewer/observer roles, owner-authorized enrollment and disable controls
+- Optional local PBKDF2-HMAC reviewer password gate for WEAVER and STEWARD reviews, owner/reviewer/observer roles, owner-authorized enrollment and disable controls
+- Source-validated STEWARD decision attestations tied to the existing hash-chained audit trail
 - Transaction-coupled, hash-chained audit events
 - Markdown/JSON snapshot export to an empty destination
 - Local Obsidian Markdown vault preview, transactional import, conflict protection, and path-mapping rollback
@@ -182,7 +195,7 @@ Once a scope has any enrolled account, **WEAVER relation-review annotations requ
 ## Important limitations
 
 - **Not encrypted.** Do not ingest passwords, API keys, personal secrets, or sensitive project data. Protect the underlying disk and backups.
-- **Not a security boundary.** Scopes organize content; they are not user/agent authorization boundaries. The optional WEAVER local reviewer gate validates password possession for relation annotations only; it does not provide host identity, broader database access control or protection from direct SQLite access.
+- **Not a security boundary.** Scopes organize content; they are not user/agent authorization boundaries. The optional local reviewer password gate covers WEAVER relationship and STEWARD decision review annotations, but not host identity, broader database access control or protection from direct SQLite access.
 - **Not tamper-proof.** An owner with database write access can rewrite or truncate both records and audit history; externally anchored snapshots are future work.
 - **Not an automatic truth engine.** Exact quoted text proves what a source says, not that the statement is accurate.
 - **GitHub ingestion is limited.** Rung 2 supports public, immutable-commit, explicitly allowlisted UTF-8 files. Private GitHub data, CI event ingestion, and PhiOS integration remain future work.
