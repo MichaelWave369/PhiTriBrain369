@@ -4,7 +4,7 @@
 
 A local-first, model-independent knowledge store for the Phi369 ecosystem, designed to give PhiOS, PhiMadaPrime, PhiBots, and PhiRSI traceable project memory without locking the architecture to any single LLM provider.
 
-**Status: Rungs 1–2 implemented; Rung 3a–3f adds WEAVER proposals/reviews, optional local semantic retrieval, and scope-local credential checks for WEAVER and STEWARD reviews.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
+**Status: Rungs 1–3 implemented through Rung 3f; Rung 4a provides an explicitly allowlisted, offline three-lane snapshot bridge for operator workspaces.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
 
 ## Three brains
 
@@ -168,6 +168,17 @@ phitribrain audit
 
 The CLI requires an interactive confirmation and prompts for the enrolled reviewer password when the scope is gated. Historical reviews are not reauthenticated. **Approved is an annotation, never a deployment or execution grant.** See [STEWARD Review Gate](docs/STEWARD_REVIEW_GATE.md).
 
+## Rung 4a: read-only operator bridge
+
+You can now assemble a small, evidence-cited WITNESS/WEAVER/STEWARD snapshot for a future PhiMadaPrime, PhiBots, PhiOS, or PhiRSI workspace. Select the exact record IDs in a local JSON manifest and preview without changing the database:
+
+```bash
+phitribrain bridge --manifest examples/operator-bridge.sample.json
+phitribrain bridge --manifest examples/operator-bridge.sample.json --output ./phi-operator-snapshot.json
+```
+
+Replace the placeholder claim ID in the sample first. The export **never overwrites existing files**, does not send data to another application, and never provides execution permissions. Every linked WEAVER or STEWARD claim must be explicitly listed in the manifest. See [Operator Bridge](docs/OPERATOR_BRIDGE.md).
+
 ## Manual review
 
 `phitribrain review` requires an interactive terminal and an exact typed confirmation. It records only a **local review annotation**. Legacy scopes without enrolled accounts accept unauthenticated labels; enrolled scopes require scope-local reviewer passwords. Neither type of review grants any agent permission to execute actions.
@@ -187,6 +198,7 @@ The CLI requires an interactive confirmation and prompts for the enrolled review
 - Offline semantic-neighbor proposal generation, commit/date/source context cautions, and review queue provenance
 - Optional local PBKDF2-HMAC reviewer password gate for WEAVER and STEWARD reviews, owner/reviewer/observer roles, owner-authorized enrollment and disable controls
 - Source-validated STEWARD decision attestations tied to the existing hash-chained audit trail
+- Explicit-ID, read-only, offline Phi369 operator snapshots with three named lanes, provenance verification and fail-closed dependencies
 - Transaction-coupled, hash-chained audit events
 - Markdown/JSON snapshot export to an empty destination
 - Local Obsidian Markdown vault preview, transactional import, conflict protection, and path-mapping rollback
