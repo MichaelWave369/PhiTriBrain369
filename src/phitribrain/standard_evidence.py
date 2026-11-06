@@ -7,6 +7,7 @@ Never infers evidence, promotes a claim, or writes WEAVER/STEWARD records.
 from __future__ import annotations
 
 import re
+import sqlite3
 from typing import Any
 
 from .evidence import cited_claim
@@ -80,8 +81,8 @@ def audit_definition(
                 store, scope=scope, claim_id=claim_id,
                 as_of=as_of, stale_after_days=stale_after_days,
             )
-        except ValueError:
-            report["issues"].append(prefix + ": claim missing, wrong scope, or source integrity check failed")
+        except (ValueError, sqlite3.DatabaseError):
+            report["issues"].append(prefix + ": claim missing, wrong scope, invalid ledger, or source integrity check failed")
             continue
         if cited["citation"]["source_id"] != source_id:
             report["issues"].append(prefix + ": source ID does not match WITNESS claim")
@@ -125,22 +126,30 @@ def audit_definition(
     # Discover pre-existing relationship proposals between only cited claims.
     # This is a read-only preview; WEAVER relations never become facts here.
     if len(valid_ids) >= 2:
-        rows = store.db.execute(
-            "SELECT id,left_claim,right_claim,relation FROM relations "
-            "WHERE scope=? AND state='proposed' ORDER BY id LIMIT 1000",
-            (scope,),
-        ).fetchall()
-        for row in rows:
-            if row["left_claim"] in valid_ids and row["right_claim"] in valid_ids:
-                report["existing_weaver_proposals"].append({
-                    "relation_id": row["id"],
-                    "left_claim": row["left_claim"],
-                    "right_claim": row["right_claim"],
-                    "relation_proposed_not_fact": row["relation"],
-                })
-                if len(report["existing_weaver_proposals"]) == 20:
-                    report["warnings"].append("Only first 20 existing WEAVER proposals are displayed")
-                    break
+        identifiers = sorted(valid_ids)
+        markers = ",".join("?" for _ in identifiers)
+        try:
+            rows = store.db.execute(
+                "SELECT id,left_claim,right_claim,relation FROM relations "
+                "WHERE scope=? AND state='proposed' "
+                "AND left_claim IN (" + markers + ") "
+                "AND right_claim IN (" + markers + ") "
+                "ORDER BY id LIMIT 21",
+                (scope, *identifiers, *identifiers),
+            ).fetchall()
+        except sqlite3.DatabaseError:
+            report["issues"].append("Local WEAVER relation table could not be read")
+            report["state"] = "ATTRIBUTION_CHECK_FAILED"
+            return report
+        for row in rows[:20]:
+            report["existing_weaver_proposals"].append({
+                "relation_id": row["id"],
+                "left_claim": row["left_claim"],
+                "right_claim": row["right_claim"],
+                "relation_proposed_not_fact": row["relation"],
+            })
+        if len(rows) > 20:
+            report["warnings"].append("Only first 20 existing WEAVER proposals are displayed")
 
     report["state"] = "LOCAL_QUOTE_ANCHORS_MATCHED"
     report["attributions_matched"] = True
