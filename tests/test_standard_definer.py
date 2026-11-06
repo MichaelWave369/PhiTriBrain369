@@ -112,6 +112,29 @@ class DefinitionTests(unittest.TestCase):
             left.write_text('{"bad":1}', encoding="utf-8")
             self.assertEqual(main(["validate", str(left)]), 2)
 
+    def test_invalid_unhashable_status_values_fail_cleanly(self):
+        item = fixture()
+        item["epistemic_status"] = []
+        self.assertFalse(validate_record(item)["valid"])
+        item["epistemic_status"] = "draft"
+        item["alternatives"][0]["status"] = {}
+        self.assertFalse(validate_record(item)["valid"])
+        item["alternatives"][0]["status"] = "speculative"
+        item["evidence"] = [{
+            "source_id": "s", "claim_id": "c", "quote": "q", "stance": []
+        }]
+        self.assertFalse(validate_record(item)["valid"])
+        item["evidence"] = []
+        item["relations"] = [{"type": [], "target_id": "math.point", "why": "r"}]
+        self.assertFalse(validate_record(item)["valid"])
+
+    def test_nonfinite_json_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            p = Path(temp) / "nan.json"
+            p.write_text('{"value": NaN}', encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "nonfinite"):
+                read_record(p)
+
     def test_schema_identifier(self):
         self.assertEqual(SCHEMA, "phi369.standard-definition.v0.1")
 
