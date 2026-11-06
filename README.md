@@ -179,6 +179,10 @@ phitribrain bridge --manifest examples/operator-bridge.sample.json --output ./ph
 
 Replace the placeholder claim ID in the sample first. The export **never overwrites existing files**, does not send data to another application, and never provides execution permissions. Every linked WEAVER or STEWARD claim must be explicitly listed in the manifest. See [Operator Bridge](docs/OPERATOR_BRIDGE.md).
 
+## Companion visualizer: PhiMadaPrime R38
+
+The implementation is tracked in [PhiMadaPrime R38 consumer PR](https://github.com/MichaelWave369/PhiMadaPrime/pull/46) adds an on-demand three-lane WITNESS / WEAVER / STEWARD viewer to the existing ThinkTank. It reads only a manually exported Rung 4a JSON snapshot; this repo remains the local SQLite knowledge source. It does **not** automatically synchronize, authenticate this unsigned export, independently verify original source bytes, or authorize decisions. Details: [Operator bridge](docs/OPERATOR_BRIDGE.md). Once the consumer implementation is merged and deployed, use a local manifest with consumer PhiMadaPrime and explicitly import a non-sensitive snapshot.
+
 ## Manual review
 
 `phitribrain review` requires an interactive terminal and an exact typed confirmation. It records only a **local review annotation**. Legacy scopes without enrolled accounts accept unauthenticated labels; enrolled scopes require scope-local reviewer passwords. Neither type of review grants any agent permission to execute actions.
