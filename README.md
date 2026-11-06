@@ -6,6 +6,10 @@ A local-first, model-independent knowledge store for the Phi369 ecosystem, desig
 
 **Status: Rungs 1–3 implemented through Rung 3f; Rung 4a provides an explicitly allowlisted, offline three-lane snapshot bridge for operator workspaces.** This is not an autonomous AI, Obsidian plugin, multi-user service, or complete three-agent system. The brains are distinct *logical responsibilities* backed by a common local store.
 
+## STARTRACE-5: attribution-only research receipt bridge
+
+The [STARTRACE-5 WITNESS bridge](docs/STARTRACE_INTEGRATION.md) takes an exported GMED historical-astronomy research receipt, validates its *illustrative-only* contract, and generates an attributed Markdown source note. It does **not** write SQLite data or establish the historical truth of claims. Preview with `python -m phitribrain.startrace_bridge receipt.json`; write a new note with `--output startrace-note.md`; opt into a separate WITNESS ingest afterward.
+
 ## Three brains
 
 | Brain | Responsibility | Non-negotiable rule |
