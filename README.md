@@ -219,6 +219,12 @@ The implementation is tracked in [PhiMadaPrime R38 consumer PR](https://github.c
 - **Not two-way sync.** Editing exported Markdown does not update SQLite. Local Obsidian import is opt-in and snapshots source files; it never writes back to a vault.
 - **Prompt-injection risk.** Imported text must always be treated as untrusted data, never agent instructions.
 
+## Φ Standard Definer (experimental Rung 1)
+
+See [Definition Genesis](docs/STANDARD_DEFINER.md) for a local, review-only candidate-definition protocol with explicit epistemic status, contexts, temporal perspectives and unverified source attributions. It validates and compares JSON definitions without changing the knowledge ledger, certifying claims, or approving standards.
+
+Run: python -m phitribrain.standard_definer validate examples/standard-dimension.json
+
 ## Development
 
 ```bash

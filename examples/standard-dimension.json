@@ -1,0 +1,38 @@
+{
+  "schema": "phi369.standard-definition.v0.1",
+  "concept_id": "physics.dimension",
+  "revision": 1,
+  "term": "Dimension",
+  "domain": "theoretical physics",
+  "context": "coordinates in physical spacetime models",
+  "definition": "An independent coordinate needed to describe an event in a specified spacetime model.",
+  "epistemic_status": "draft",
+  "temporal": {
+    "was": "Historical descriptions of space and time used various mathematical frameworks.",
+    "is": "General relativity models spacetime with three spatial and one temporal coordinate.",
+    "might_become": "Future measurements could constrain proposed additional physical dimensions."
+  },
+  "assumptions": [
+    "Dimensionality is defined relative to a mathematical model."
+  ],
+  "evidence": [],
+  "alternatives": [
+    {
+      "label": "Additional compact spatial dimensions",
+      "definition": "Some theoretical models introduce extra spatial coordinates.",
+      "status": "speculative",
+      "distinguishing_test": "Demonstrate a reproducible observation that differentiates predictions from four-dimensional models."
+    }
+  ],
+  "relations": [
+    {
+      "type": "related_to",
+      "target_id": "physics.spacetime",
+      "why": "Spacetime descriptions specify dimensionality."
+    }
+  ],
+  "open_questions": [
+    "Do additional physical spatial dimensions exist?"
+  ],
+  "review_state": "unreviewed"
+}
