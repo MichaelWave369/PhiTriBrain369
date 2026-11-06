@@ -225,6 +225,16 @@ See [Definition Genesis](docs/STANDARD_DEFINER.md) for a local, review-only cand
 
 Run: python -m phitribrain.standard_definer validate examples/standard-dimension.json
 
+## Φ Standard Definer Rung 2 · local Evidence Genesis
+
+Standard Definer now supports a **read-only, explicit WITNESS quote-audit** for candidate definitions. It checks that cited claim IDs, source IDs and exact quoted text correspond to one existing project scope and a local source digest. It does not determine factual truth or grant review/execution authority. Existing WEAVER relationships are displayed only as unapproved proposals.
+
+```bash
+python -m phitribrain.standard_definer evidence candidate.json --db .phitribrain/brain.sqlite3 --scope Physics
+```
+
+See [Standard Definer](docs/STANDARD_DEFINER.md). No background model calls, network, DB migrations or writes are added.
+
 ## Development
 
 ```bash

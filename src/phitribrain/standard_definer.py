@@ -190,6 +190,12 @@ def main(argv: list[str] | None = None) -> int:
     comparison = commands.add_parser("compare")
     comparison.add_argument("left")
     comparison.add_argument("right")
+    evidence = commands.add_parser("evidence", help="Audit exact WITNESS quotes in a local read-only database")
+    evidence.add_argument("path", help="Candidate definition JSON")
+    evidence.add_argument("--db", required=True, help="Existing PhiTriBrain SQLite database")
+    evidence.add_argument("--scope", required=True, help="Exact project scope; no cross-scope lookup")
+    evidence.add_argument("--as-of", help="ISO 8601 timestamp with timezone")
+    evidence.add_argument("--stale-after-days", type=int, default=180)
     args = parser.parse_args(argv)
     try:
         if args.command == "draft":
@@ -201,6 +207,17 @@ def main(argv: list[str] | None = None) -> int:
                 result["fingerprint_sha256"] = fingerprint(record)
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0 if result["valid"] else 2
+        elif args.command == "evidence":
+            from .standard_evidence import audit_definition
+            from .store import BrainStore
+            record = read_record(args.path)
+            with BrainStore(args.db, readonly=True) as store:
+                result = audit_definition(
+                    store, record, scope=args.scope,
+                    as_of=args.as_of, stale_after_days=args.stale_after_days,
+                )
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0 if result["state"] == "LOCAL_QUOTE_ANCHORS_MATCHED" else 2
         else:
             result = compare(read_record(args.left), read_record(args.right))
         print(json.dumps(result, ensure_ascii=False, indent=2))
