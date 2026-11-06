@@ -1,0 +1,31 @@
+{
+  "schema": "phi369.standard-definition.v0.1",
+  "concept_id": "physics.dimension",
+  "revision": 1,
+  "term": "Dimension",
+  "domain": "theoretical physics",
+  "context": "coordinates in physical spacetime models",
+  "definition": "An independently variable degree of freedom represented by a coordinate in a physical model.",
+  "epistemic_status": "draft",
+  "temporal": {
+    "was": "Historical descriptions of space and time used various mathematical frameworks.",
+    "is": "Dimensionality depends upon the physical model used.",
+    "might_become": "Future measurements could constrain proposed additional physical dimensions."
+  },
+  "assumptions": [
+    "Dimensionality is defined relative to a mathematical model."
+  ],
+  "evidence": [],
+  "alternatives": [],
+  "relations": [
+    {
+      "type": "related_to",
+      "target_id": "physics.spacetime",
+      "why": "Spacetime descriptions specify dimensionality."
+    }
+  ],
+  "open_questions": [
+    "Do additional physical spatial dimensions exist?"
+  ],
+  "review_state": "unreviewed"
+}
