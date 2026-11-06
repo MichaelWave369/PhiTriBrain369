@@ -29,3 +29,47 @@ Local input must be UTF-8 JSON. Records greater than 256 KiB, duplicate JSON obj
 Rung 2: selected WITNESS source/claim verification by exact quote, source digest and scope; review-only WEAVER links and auditable human input. Later: external GMED test receipts, Altermath/NBG model adapters, and PhiMadaPrime ThinkTank visualization. None are live in Rung 1.
 
 Principle: a standard is a tool for investigating reality, not a declaration that reality must conform to it.
+
+
+## Rung 2: local WITNESS Evidence Genesis
+
+Rung 2 adds an explicitly requested, **read-only** audit of an existing complete
+Standard Definer JSON record against one existing PhiTriBrain SQLite database.
+It uses the existing WITNESS citation verifier. There is **no** automated retrieval,
+candidate generation, agent, database migration, or remote service.
+
+After using the ordinary TriBrain commands to ingest a non-sensitive local
+source and record an exact-quote claim, put its real returned source_id, claim_id,
+verbatim quote and supplied stance in the candidate's evidence array:
+
+    {
+      "source_id": "src_REAL_LOCAL_ID",
+      "claim_id": "clm_REAL_LOCAL_ID",
+      "quote": "A verbatim excerpt from the stored source.",
+      "stance": "supports"
+    }
+
+Run the check with an *existing* database:
+
+    python -m phitribrain.standard_definer evidence candidate.json --db .phitribrain/brain.sqlite3 --scope Physics
+
+An optional --as-of argument accepts a timezone-aware ISO 8601 timestamp;
+--stale-after-days defaults to 180. The command exits 0 only when all explicitly
+selected source/claim/quote bindings match local WITNESS. It exits 2 for missing
+evidence, failed structure or anchor checks, or missing database. Neither the
+CLI nor audit function inserts data or grants permissions.
+
+The report contains a hash of the candidate JSON; each successfully checked
+binding contains the locally recomputed source digest, quote offset and line,
+claim status, observation-age metadata and warnings. Existing WEAVER proposals
+between the explicit referenced claims may be shown as **proposed, not facts**;
+the audit never creates or approves WEAVER relationships. For bounded reporting,
+only up to 20 explicit evidence items and 20 existing proposals are shown.
+
+**Trust boundaries:** LOCAL_QUOTE_ANCHORS_MATCHED means only that an existing
+local source body matches its recorded digest and the selected quote matches
+the stored claim at its recorded offset. It does not authenticate the outside
+world, verify external citations, establish scientific truth, endorse the
+claimed epistemic status, approve a standard, certify an AI model, or authorize
+STEWARD decisions and tool execution. Disputed/stale claims stay visible with
+warnings; a successful anchor check still requires human review.
