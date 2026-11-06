@@ -76,7 +76,7 @@ def validate_record(value: Any) -> dict[str, Any]:
     for field in ("term", "domain", "context", "definition"):
         _text(value.get(field), field, errors)
     status = value.get("epistemic_status")
-    if status not in STATUSES:
+    if not isinstance(status, str) or status not in STATUSES:
         errors.append("unrecognized epistemic_status")
     if value.get("review_state") != "unreviewed":
         errors.append("Rung 1 cannot certify or approve any definition")
@@ -96,7 +96,7 @@ def validate_record(value: Any) -> dict[str, Any]:
             continue
         for field in ("source_id", "claim_id", "quote"):
             _text(item.get(field), path + "." + field, errors)
-        if item.get("stance") not in STANCES:
+        if not isinstance(item.get("stance"), str) or item.get("stance") not in STANCES:
             errors.append(path + ".stance invalid")
         if item.get("stance") == "supports":
             support_count += 1
@@ -115,14 +115,14 @@ def validate_record(value: Any) -> dict[str, Any]:
             _text(item.get(field), path + "." + field, errors)
         _text(item.get("distinguishing_test"), path + ".distinguishing_test",
               errors, optional=True)
-        if item.get("status") not in STATUSES:
+        if not isinstance(item.get("status"), str) or item.get("status") not in STATUSES:
             errors.append(path + ".status invalid")
     for i, item in enumerate(_list(value.get("relations"), "relations", errors)):
         path = f"relations[{i}]"
         fields = {"type", "target_id", "why"}
         if not _keys(item, path, fields, fields, errors):
             continue
-        if item.get("type") not in RELATIONS:
+        if not isinstance(item.get("type"), str) or item.get("type") not in RELATIONS:
             errors.append(path + ".type invalid")
         _text(item.get("target_id"), path + ".target_id", errors)
         _text(item.get("why"), path + ".why", errors)
